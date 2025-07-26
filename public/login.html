@@ -37,25 +37,25 @@
         <div id="login-section" class="container">
             <div class="login-container">
                 <h2 class="text-center mb-4" data-i18n="login_title">Login to VendorConnect</h2>
-                <form id="login-form">
+                <form id="login-form" action="/login" method="post">
                     <div class="mb-3">
                         <label name="username" for="username" class="form-label" data-i18n="username">Username</label>
-                        <input type="text" class="form-control" id="username" required>
+                        <input type="text" class="form-control" id="username" name="username" required>
                     </div>
                     <div class="mb-3">
                         <label name="password" for="password" class="form-label" data-i18n="password">Password</label>
-                        <input type="password" class="form-control" id="password" required>
+                        <input type="password" name="password" class="form-control" id="password" required>
                     </div>
                     <div class="mb-3">
                         <label for="role" class="form-label" data-i18n="select_role">Select Role</label>
-                        <select class="form-select" id="role" required>
+                        <select class="form-select" id="role" name="role" required>
                             <option value="" data-i18n="choose_role">Choose role...</option>
                             <option name="role" value="vendor" data-i18n="vendor">Vendor</option>
                             <option name="role" value="supplier" data-i18n="supplier">Supplier</option>
                         </select>
                     </div>
                     <div class="d-grid">
-                       <a href="/login"> <button type="submit" class="btn btn-primary" data-i18n="login_btn">Login</button></a>
+                       <button type="submit" class="btn btn-primary" data-i18n="login_btn">Login</button>
                     </div>
                 </form>
                 <div class="text-center mt-3">
@@ -63,6 +63,6 @@
                 </div>
             </div>
         </div>
-        
+    <script src="login.js"></script>
 </body>
 </html>

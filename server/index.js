@@ -3,6 +3,8 @@ import bodyParser from "body-parser";
 import bcrypt from "bcrypt";
 import mysql2 from "mysql2";
 import env from "dotenv";
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 env.config();
 
@@ -18,71 +20,61 @@ const app = express();
 const port = process.env.PORT || 3000;
 const saltRounds = 10;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 env.config();
 
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "..", "public")));
+
+app.get("/style.css", (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "public", "style.css"));
+});
+
+//Home page route
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "public", "home.html"));
+});
 
 //Login route
 app.get("/login", (req, res) => {
-    res.sendFile(__dirname + "/public/login.html");
+    res.sendFile(path.join(__dirname, "..", "public", "login.html"));
 });
 
-app.post("/login", async (req, res) => {
-    const {username, password, role} = req.body;
+// Login POST route with form validation and redirect logic
+app.post("/login", (req, res) => {
+    const { username, password, role } = req.body;
 
-    if(role === "vendor") {
-        const result = await db.query("SELECT * FROM Vendor WHERE username = ?", 
-            [username]);
-        
-        if(result.rows.length === 0){
-            return res.send("Vendor not found");
-        }
+    // Simple validation
+    if (!username || !password || !role) {
+        return res.status(400).send("Please fill in all fields");
+    }
 
-        return res.sendFile(__dirname + "/public/vendor_dashboard.html", {username});
-
+    // Save user data in session or database if needed (demo: skip)
+    // Redirect to appropriate dashboard based on role
+    if (role === "vendor") {
+        return res.redirect("/vendor/dashboard");
     } else if (role === "supplier") {
-        const result = await db.query("SELECT * FROM Supplier WHERE username = ?", 
-            [username]);
-        
-        if(result.rows.length === 0){
-            return res.send("Supplier not found");
-        };
-
-        return res.sendFile(__dirname + "/public/supplier_dashboard.html", {username});
+        return res.redirect("/supplier/dashboard");
     } else {
         return res.status(400).send("Invalid role");
     }
 });
 
+//Logout route
+app.get("/logout", (req, res) => { 
+        res.redirect("/login");
+});
+
 //Vendor Dashboard route
-app.get("/vendor/:id/dashboard", (req, res) => {
-    res.sendFile(__dirname + "/public/vendor_dashboard.html");
-});
-
-//Vendor Inventory route
-app.get("/vendor/:id/inventory", async (req, res) => {
-    const vendorId = req.params.id;
-    const [rows] = await db.query("SELECT * FROM VendorInventory WHERE vendor_id = ?", [vendorId]);
-    res.sendFile(__dirname + "/public/vendor_inventory.html");
-});
-
-app.post("/vendor/:id/inventory", async (req, res) => {
-    const vendorId = req.params.id;
-    const { product, quantity, status } = req.body;
-
-    // Handle inventory update logic here
-    console.log(`Product: ${product}, Quantity: ${quantity}, Status: ${status}`);
-});
-
-//Vendor Order route
-app.get("/vendor/:id/order", (req, res) => {
-    res.sendFile(__dirname + "/public/vendor_order.html");
+app.get("/vendor/dashboard", (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "public", "vendor.html"));
 });
 
 //Supplier Dashboard route
 app.get("/supplier/dashboard", (req, res) => {
-    res.sendFile(__dirname + "/public/supplier_dashboard.html");
+    res.sendFile(path.join(__dirname, "..", "public", "supplier.html"));
 });
 
 app.listen(port, () => {

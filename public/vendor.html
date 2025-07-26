@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard - VendorConnect</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="container">
+                <div class="d-flex align-items-center">
+                    <a href="/vendor/dashboard" class="app-logo">
+                        <i class="fas fa-utensils me-2"></i>VendorConnect
+                    </a>
+                    <div class="language-selector ms-auto">
+                        <button class="lang-btn active" data-lang="en">English</button>
+                        <button class="lang-btn" data-lang="hi">हिंदी</button>
+                        <button class="lang-btn" data-lang="mr">मराठी</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Vendor Dashboard -->
+        <div id="vendor-dashboard" class="dashboard container">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2><span data-i18n="welcome">Welcome</span>, <span id="vendor-name">Rajesh</span>!</h2>
+                        <p class="text-muted mb-0" data-i18n="vendor_dashboard">Vendor Dashboard</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <button class="btn btn-outline-secondary me-2" id="refresh-data">
+                            <i class="fas fa-sync-alt me-1"></i> <span data-i18n="refresh">Refresh</span>
+                        </button>
+                        <button class="btn btn-outline-danger" id="logout-btn">
+                            <i class="fas fa-sign-out-alt me-1"></i> <span data-i18n="logout">Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Inventory Panel -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span data-i18n="inventory_status">Inventory Status</span>
+                            <button class="btn btn-sm btn-outline-primary" data-i18n="update_inventory">Update Inventory</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="vendor-inventory-table">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="product">Product</th>
+                                            <th data-i18n="quantity">Quantity</th>
+                                            <th data-i18n="status">Status</th>
+                                            <th data-i18n="actions">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Inventory data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Price Comparison -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-i18n="price_comparison">Price Comparison</div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="price-comparison-table">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="item">Item</th>
+                                            <th data-i18n="market_price">Market Price</th>
+                                            <th data-i18n="best_supplier">Best Supplier</th>
+                                            <th data-i18n="best_price">Best Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Price comparison data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="chart-container">
+                                <canvas id="priceComparisonChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Suppliers List -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-i18n="nearby_suppliers">Nearby Suppliers</div>
+                        <div class="card-body">
+                            <div class="row" id="suppliers-list">
+                                <!-- Suppliers will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notifications -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-i18n="notifications">Notifications</div>
+                        <div class="card-body">
+                            <div id="vendor-notifications">
+                                <!-- Notifications will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Group Purchase -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-i18n="group_purchases">Group Purchases</div>
+                        <div class="card-body">
+                            <div id="group-purchases">
+                                <!-- Group purchases will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Autopay Setup -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-i18n="autopay_setup">Autopay Setup</div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h5 data-i18n="payment_methods">Payment Methods</h5>
+                                <div class="d-flex align-items-center justify-content-between mb-3 p-2 border rounded">
+                                    <div>
+                                        <i class="fas fa-university me-2"></i> <span data-i18n="bank_transfer">Bank Transfer</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" class="autopay-toggle" id="bank-transfer">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between mb-3 p-2 border rounded">
+                                    <div>
+                                        <i class="fab fa-cc-visa me-2"></i> <span data-i18n="credit_card">Credit Card</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" class="autopay-toggle" id="credit-card">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between p-2 border rounded">
+                                    <div>
+                                        <i class="fas fa-mobile-alt me-2"></i> <span data-i18n="upi">UPI</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" class="autopay-toggle" checked id="upi">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 data-i18n="autopay_settings">Autopay Settings</h5>
+                                <div class="mb-3">
+                                    <label for="min-amount" class="form-label" data-i18n="min_amount">Minimum Order Amount</label>
+                                    <input type="range" class="form-range" id="min-amount" min="100" max="5000" step="100" value="1000">
+                                    <div class="d-flex justify-content-between">
+                                        <small>₹100</small>
+                                        <small id="min-amount-value">₹1000</small>
+                                        <small>₹5000</small>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="autopay-day" class="form-label" data-i18n="payment_day">Payment Day</label>
+                                    <select class="form-select" id="autopay-day">
+                                        <option value="1" data-i18n="first_day">First day of month</option>
+                                        <option value="15" data-i18n="fifteenth_day">15th of month</option>
+                                        <option value="30" selected data-i18n="last_day">Last day of month</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="vendor.js"></script>
+    
+</body>
+</html> 
