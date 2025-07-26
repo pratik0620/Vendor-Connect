@@ -1,0 +1,277 @@
+:root {
+    --primary-color: #FF6B35;
+    --secondary-color: #2EC4B6;
+    --accent-color: #FFBF00;
+    --text-color: #333333;
+    --light-bg: #F7F7F7;
+    --white: #FFFFFF;
+    --danger: #FF4136;
+    --success: #28a745;
+    --warning: #FFBF00;
+    --info: #17a2b8;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-bg);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container-fluid {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.app-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header Styles */
+.app-header {
+    background: linear-gradient(135deg, var(--primary-color), #FF9E68);
+    color: var(--white);
+    padding: 1rem 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.app-logo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--white);
+    text-decoration: none;
+}
+
+.app-logo:hover {
+    color: var(--white);
+}
+
+/* Login Form */
+.login-container {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: var(--white);
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Dashboard Styles */
+.dashboard {
+    display: none;
+    padding: 20px 0;
+}
+
+.dashboard-header {
+    margin-bottom: 20px;
+    background-color: var(--white);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: var(--white);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+}
+
+/* Table Styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: var(--light-bg);
+}
+
+/* Badge Styles */
+.badge {
+    padding: 0.4em 0.6em;
+    font-weight: 500;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #FF5722;
+    border-color: #FF5722;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-secondary:hover {
+    background-color: #25B0A3;
+    border-color: #25B0A3;
+}
+
+.btn-accent {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: var(--text-color);
+}
+
+.btn-accent:hover {
+    background-color: #F2B600;
+    border-color: #F2B600;
+    color: var(--text-color);
+}
+
+/* Rating Stars */
+.stars {
+    color: var(--accent-color);
+}
+
+/* Language Selector */
+.language-selector {
+    margin-left: auto;
+}
+
+.lang-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--white);
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.lang-btn:hover,
+.lang-btn.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Notification styles */
+.notification-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 10px 0;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* Supplier item */
+.supplier-item {
+    margin-bottom: 15px;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 10px;
+}
+
+/* Group purchase styles */
+.group-purchase-item {
+    background-color: rgba(255, 191, 0, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .app-logo {
+        font-size: 1.5rem;
+    }
+
+    .card {
+        margin-bottom: 15px;
+    }
+
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+
+/* Charts container */
+.chart-container {
+    height: 300px;
+    position: relative;
+}
+
+/* Stock status indicators */
+.stock-low {
+    color: var(--danger);
+}
+
+.stock-ok {
+    color: var(--success);
+}
+
+.stock-high {
+    color: var(--info);
+}
+
+/* Product freshness tags */
+.freshness-tag {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+}
+
+/* Toggle switch for autopay */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: var(--success);
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
