@@ -1,6 +1,6 @@
 
 // Language translations
-const translations = {
+const translations = { 
     en: {
         login_title: "Login to VendorConnect",
         username: "Username",
@@ -636,9 +636,12 @@ function loadVendorInventory() {
                         <td>${item.name}</td>
                         <td>${item.quantity} kg</td>
                         <td><span class="${statusClass}">${statusText}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-primary">
-                                ${translations[currentLang].order}
+                         <td>
+                            <button class="btn btn-sm btn-outline-secondary me-1">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </td>
                     </tr>
@@ -980,3 +983,97 @@ function initPriceComparisonChart() {
             }
         }
     });}
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('supplier-product-search');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+
+        // Filter suppliers
+        document.querySelectorAll('#suppliers-list .supplier-card').forEach(card => {
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(query) ? '' : 'none';
+        });
+
+        // Filter products in price comparison table
+        document.querySelectorAll('#price-comparison-table tbody tr').forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+
+    // Toggle Actions column and its buttons
+    document.getElementById('update-inventory-btn').addEventListener('click', function() {
+        document.querySelectorAll('.actions-col').forEach(function(col) {
+            col.style.display = (col.style.display === 'none' || col.style.display === '') ? 'table-cell' : 'none';
+        });
+    });
+
+    // Example product list (replace with your actual data source)
+    const allProducts = [
+        { name: "Tomato" },
+        { name: "Potato" },
+        { name: "Onion" },
+        { name: "Carrot" }
+    ];
+
+    const inventoryTable = document.getElementById('vendor-inventory-table').getElementsByTagName('tbody')[0];
+    const searchResults = document.getElementById('search-results');
+
+    document.getElementById('supplier-product-search').addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        searchResults.innerHTML = '';
+
+        if (query.length > 0) {
+            // Find products not already in inventory
+            const inventoryProducts = Array.from(inventoryTable.querySelectorAll('tr')).map(row => row.cells[0]?.textContent?.toLowerCase());
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) && !inventoryProducts.includes(p.name.toLowerCase()));
+
+            filtered.forEach(product => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item d-flex justify-content-between align-items-center p-2 border rounded mb-2';
+                div.innerHTML = `
+                    <span>${product.name}</span>
+                    <button class="btn btn-sm btn-success ms-2">Add to Inventory</button>
+                `;
+                div.querySelector('button').onclick = function() {
+                    // Add product to inventory table
+                    const row = inventoryTable.insertRow();
+                    row.insertCell(0).textContent = product.name;
+                    row.insertCell(1).textContent = '0'; // Default quantity
+                    row.insertCell(2).textContent = 'Low'; // Default status
+                    const actionsCell = row.insertCell(3);
+                    actionsCell.className = 'actions-col';
+                    // Show or hide actions based on current state
+                    const refCol = document.querySelector('th.actions-col');
+                    actionsCell.style.display = (refCol && refCol.style.display !== 'none') ? 'table-cell' : 'none';
+                    actionsCell.innerHTML = `
+    <button class="btn btn-sm btn-outline-primary me-2"><i class="fas fa-edit"></i></button>
+    <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+`;
+                    searchResults.innerHTML = '';
+                };
+                searchResults.appendChild(div);
+            });
+        }
+    });
+
+    document.getElementById('order-all-btn').addEventListener('click', function() {
+        const inventoryTable = document.getElementById('vendor-inventory-table').getElementsByTagName('tbody')[0];
+        const items = [];
+        Array.from(inventoryTable.rows).forEach(row => {
+            const product = row.cells[0]?.textContent;
+            const quantity = row.cells[1]?.textContent;
+            if (product && quantity) {
+                items.push({ product, quantity });
+            }
+        });
+        if (items.length > 0) {
+            alert('Order placed for all items:\n' + items.map(i => `${i.product} - ${i.quantity}`).join('\n'));
+            // Here you can add your actual order logic (API call, etc.)
+        } else {
+            alert('No items in inventory to order.');
+        }
+    });
+});
