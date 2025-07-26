@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"> 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,37 +36,6 @@
             </div>
         </header>
         
-        <!-- Login Section -->
-        <div id="login-section" class="container">
-            <div class="login-container">
-                <h2 class="text-center mb-4" data-i18n="login_title">Login to VendorConnect</h2>
-                <form id="login-form">
-                    <div class="mb-3">
-                        <label for="username" class="form-label" data-i18n="username">Username</label>
-                        <input type="text" class="form-control" id="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label" data-i18n="password">Password</label>
-                        <input type="password" class="form-control" id="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="role" class="form-label" data-i18n="select_role">Select Role</label>
-                        <select class="form-select" id="role" required>
-                            <option value="" data-i18n="choose_role">Choose role...</option>
-                            <option value="vendor" data-i18n="vendor">Vendor</option>
-                            <option value="supplier" data-i18n="supplier">Supplier</option>
-                        </select>
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary" data-i18n="login_btn">Login</button>
-                    </div>
-                </form>
-                <div class="text-center mt-3">
-                    <small class="text-muted" data-i18n="demo_note">This is a demo. Any username/password will work.</small>
-                </div>
-            </div>
-        </div>
-        
         <!-- Vendor Dashboard -->
         <div id="vendor-dashboard" class="dashboard container">
             <div class="dashboard-header">
@@ -79,36 +48,53 @@
                         <button class="btn btn-outline-secondary me-2" id="refresh-data">
                             <i class="fas fa-sync-alt me-1"></i> <span data-i18n="refresh">Refresh</span>
                         </button>
-                        <button class="btn btn-outline-danger" id="logout-btn">
+                        <a href="/logout"><button class="btn btn-outline-danger" id="logout-btn">
                             <i class="fas fa-sign-out-alt me-1"></i> <span data-i18n="logout">Logout</span>
-                        </button>
+                        </button></a>
                     </div>
                 </div>
             </div>
             
+            <!-- Search Bar -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <input type="text" id="supplier-product-search" class="form-control" placeholder="Search suppliers or products...">
+                </div>
+            </div>
+
             <div class="row">
                 <!-- Inventory Panel -->
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <span data-i18n="inventory_status">Inventory Status</span>
-                            <button class="btn btn-sm btn-outline-primary" data-i18n="update_inventory">Update Inventory</button>
+                            <a href="/vendor/:id/inventory"><button class="btn btn-sm btn-outline-primary" data-i18n="update_inventory" id="update-inventory-btn">Update Inventory</button></a>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-hover" id="vendor-inventory-table">
-                                    <thead>
-                                        <tr>
-                                            <th data-i18n="product">Product</th>
-                                            <th data-i18n="quantity">Quantity</th>
-                                            <th data-i18n="status">Status</th>
-                                            <th data-i18n="actions">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Inventory data will be loaded here -->
-                                    </tbody>
-                                </table>
+                                <!-- Inventory Table -->
+<table class="table table-hover" id="vendor-inventory-table">
+    <thead>
+        <tr>
+            <th data-i18n="product">Product</th>
+            <th data-i18n="quantity">Quantity</th>
+            <th data-i18n="status">Status</th>
+            <th class="actions-col" style="display:none;" data-i18n="actions">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Tomato</td>
+            <td>10</td>
+            <td>Available</td>
+            <td class="actions-col" style="display:none;">
+                <button class="btn btn-sm btn-outline-primary me-2"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>
+        <!-- More rows -->
+    </tbody>
+</table>
                             </div>
                         </div>
                     </div>
@@ -152,6 +138,10 @@
                         <div class="card-body">
                             <div class="row" id="suppliers-list">
                                 <!-- Suppliers will be loaded here -->
+                                <!-- Example supplier card -->
+                                <div class="col-md-6 supplier-card">
+                                    <!-- Supplier info here -->
+                                </div>
                             </div>
                         </div>
                     </div>
