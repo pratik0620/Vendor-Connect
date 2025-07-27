@@ -438,7 +438,7 @@ function loadGroupOrdersList() {
     groupOrdersList.empty();
 
     mockData.groupOrders.forEach(order => {
-        const itemsList = order.items.map(item => `<li>${item}</li>`).join("");
+        const itemsList = order.items.map(item => <li>${item}</li>).join("");
 
         groupOrdersList.append(`
             <div class="card mb-3">
@@ -539,4 +539,4 @@ function getStarsHTML(rating) {
     }
 
     return starsHTML;
-} 
+}

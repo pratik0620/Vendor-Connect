@@ -108,4 +108,4 @@ function setupLoginForm() {
             window.location.href = "supplier.html";
         }
     });
-} 
+}
