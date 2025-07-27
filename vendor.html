@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard - VendorConnect</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwRr0JbQYVMcXIqo&libraries=places"></script>
+    <!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<!-- Leaflet JS -->
+
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="container">
+                <div class="d-flex align-items-center">
+                    <a href="vendor.html" class="app-logo">
+                        <i class="fas fa-utensils me-2"></i>VendorConnect
+                    </a>
+                    <div class="language-selector ms-auto">
+                        <button class="lang-btn active" data-lang="en">English</button>
+                        <button class="lang-btn" data-lang="hi">हिंदी</button>
+                        <button class="lang-btn" data-lang="mr">मराठी</button>
+                    </div>
+                    <div class="ms-3">
+                        <a href="login.html" class="btn btn-outline-primary">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Vendor Dashboard -->
+        <div id="vendor-dashboard" class="dashboard container">
+            <div class="dashboard-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2><span data-i18n="welcome">Welcome</span>, <span id="vendor-name">Rajesh</span>!</h2>
+                        <p class="text-muted mb-0" data-i18n="vendor_dashboard">Vendor Dashboard</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <button class="btn btn-outline-secondary me-2" id="refresh-data">
+                            <i class="fas fa-sync-alt me-1"></i> <span data-i18n="refresh">Refresh</span>
+                        </button>
+                        <button class="btn btn-outline-primary me-2" id="cart-toggle">
+                            <i class="fas fa-shopping-cart me-1"></i> 
+                            <span data-i18n="cart">Cart</span>
+                            <span class="badge bg-danger ms-1" id="cart-count">0</span>
+                        </button>
+                        <button class="btn btn-outline-danger" id="logout-btn">
+                            <i class="fas fa-sign-out-alt me-1"></i> <span data-i18n="logout">Logout</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Search Bar Section -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="search-container">
+                            <div class="search-wrapper">
+                                <div class="search-input-group">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" id="vendor-search" class="form-control search-input" placeholder="Search suppliers, products, prices..." data-i18n-placeholder="search_placeholder">
+                                    <button class="btn btn-primary search-btn" id="search-btn">
+                                        <i class="fas fa-search me-1"></i>
+                                        <span data-i18n="search">Search</span>
+                                    </button>
+                                </div>
+                                <div class="search-filters">
+                                    <select class="form-select form-select-sm me-2" id="search-category">
+                                        <option value="all" data-i18n="all_categories">All Categories</option>
+                                        <option value="suppliers" data-i18n="suppliers">Suppliers</option>
+                                        <option value="products" data-i18n="products">Products</option>
+                                        <option value="prices" data-i18n="prices">Prices</option>
+                                        <option value="inventory" data-i18n="inventory">Inventory</option>
+                                    </select>
+                                    <select class="form-select form-select-sm me-2" id="search-location">
+                                        <option value="all" data-i18n="all_locations">All Locations</option>
+                                        <option value="nearby" data-i18n="nearby">Nearby</option>
+                                        <option value="dadar" data-i18n="dadar">Dadar</option>
+                                        <option value="bandra" data-i18n="bandra">Bandra</option>
+                                        <option value="andheri" data-i18n="andheri">Andheri</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary btn-sm" id="advanced-search-toggle">
+                                        <i class="fas fa-filter me-1"></i>
+                                        <span data-i18n="filters">Filters</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Advanced Search Panel -->
+                            <div class="advanced-search-panel" id="advanced-search-panel" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label" data-i18n="price_range">Price Range</label>
+                                        <div class="d-flex align-items-center">
+                                            <input type="number" class="form-control form-control-sm me-1" id="min-price" placeholder="Min">
+                                            <span>-</span>
+                                            <input type="number" class="form-control form-control-sm ms-1" id="max-price" placeholder="Max">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label" data-i18n="rating">Rating</label>
+                                        <select class="form-select form-select-sm" id="rating-filter">
+                                            <option value="all" data-i18n="all_ratings">All Ratings</option>
+                                            <option value="4.5" data-i18n="above_4_5">4.5+ Stars</option>
+                                            <option value="4.0" data-i18n="above_4_0">4.0+ Stars</option>
+                                            <option value="3.5" data-i18n="above_3_5">3.5+ Stars</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label" data-i18n="distance">Distance</label>
+                                        <select class="form-select form-select-sm" id="distance-filter">
+                                            <option value="all" data-i18n="any_distance">Any Distance</option>
+                                            <option value="1" data-i18n="within_1km">Within 1km</option>
+                                            <option value="3" data-i18n="within_3km">Within 3km</option>
+                                            <option value="5" data-i18n="within_5km">Within 5km</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label" data-i18n="sort_by">Sort By</label>
+                                        <select class="form-select form-select-sm" id="sort-by">
+                                            <option value="relevance" data-i18n="relevance">Relevance</option>
+                                            <option value="price_low" data-i18n="price_low_to_high">Price: Low to High</option>
+                                            <option value="price_high" data-i18n="price_high_to_low">Price: High to Low</option>
+                                            <option value="rating" data-i18n="rating">Rating</option>
+                                            <option value="distance" data-i18n="distance">Distance</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-12 text-end">
+                                        <button class="btn btn-outline-secondary btn-sm me-2" id="clear-filters">
+                                            <i class="fas fa-times me-1"></i>
+                                            <span data-i18n="clear_filters">Clear Filters</span>
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" id="apply-filters">
+                                            <i class="fas fa-check me-1"></i>
+                                            <span data-i18n="apply_filters">Apply Filters</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Results Summary -->
+                            <div class="search-results-summary" id="search-results-summary" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span id="results-count" class="text-muted"></span>
+                                    <button class="btn btn-link btn-sm" id="clear-search">
+                                        <i class="fas fa-times me-1"></i>
+                                        <span data-i18n="clear_search">Clear Search</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Inventory Panel -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span data-i18n="inventory_status">Inventory Status</span>
+                            <button class="btn btn-sm btn-outline-primary" data-i18n="update_inventory">Update Inventory</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="vendor-inventory-table">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="product">Product</th>
+                                            <th data-i18n="quantity">Quantity</th>
+                                            <th data-i18n="status">Status</th>
+                                            <th data-i18n="actions">Actions</th>
+                                            <th data-i18n="cart">Cart</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Inventory data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Price Comparison -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-i18n="price_comparison">Price Comparison</div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="price-comparison-table">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="item">Item</th>
+                                            <th data-i18n="market_price">Market Price</th>
+                                            <th data-i18n="best_supplier">Best Supplier</th>
+                                            <th data-i18n="best_price">Best Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Price comparison data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="chart-container">
+                                <canvas id="priceComparisonChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Enhanced Nearby Suppliers Section -->
+                <div class="col-12 mb-4">
+                    <div class="suppliers-main-container">
+                        <div class="suppliers-header">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h3 class="suppliers-title">
+                                        <i class="fas fa-map-marker-alt me-2"></i>
+                                        <span data-i18n="nearby_suppliers">Nearby Suppliers</span>
+                                    </h3>
+                                    <p></p>
+                                    <p class="suppliers-subtitle" data-i18n="find_suppliers_nearby">Find and connect with suppliers in your area</p>
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <button class="btn btn-outline-orange me-2" id="refresh-suppliers">
+                                        <i class="fas fa-sync-alt me-1"></i>
+                                        <span data-i18n="refresh">Refresh</span>
+                                    </button>
+                                    <button class="btn btn-orange" id="my-location-btn">
+                                        <i class="fas fa-crosshairs me-1"></i>
+                                        <span data-i18n="my_location">My Location</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="suppliers-filter-panel">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <select class="form-select" id="supplier-category-filter">
+                                        <option value="all" data-i18n="all_categories">All Categories</option>
+                                        <option value="vegetables" data-i18n="vegetables">Vegetables</option>
+                                        <option value="fruits" data-i18n="fruits">Fruits</option>
+                                        <option value="dairy" data-i18n="dairy">Dairy</option>
+                                        <option value="meat" data-i18n="meat">Meat</option>
+                                        <option value="grains" data-i18n="grains">Grains</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="supplier-distance-filter">
+                                        <option value="all" data-i18n="any_distance">Any Distance</option>
+                                        <option value="1" data-i18n="within_1km">Within 1km</option>
+                                        <option value="3" data-i18n="within_3km">Within 3km</option>
+                                        <option value="5" data-i18n="within_5km">Within 5km</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="supplier-rating-filter">
+                                        <option value="all" data-i18n="all_ratings">All Ratings</option>
+                                        <option value="4.5" data-i18n="above_4_5">4.5+ Stars</option>
+                                        <option value="4.0" data-i18n="above_4_0">4.0+ Stars</option>
+                                        <option value="3.5" data-i18n="above_3_5">3.5+ Stars</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-orange w-100" id="clear-supplier-filters">
+                                        <i class="fas fa-times me-1"></i>
+                                        <span data-i18n="clear_filters">Clear Filters</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h5 class="mb-0">Nearby Suppliers</h5>
+                                    <button class="btn btn-orange" id="add-supplier-btn"><i class="fas fa-plus me-1"></i>Add Supplier</button>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div id="suppliers-list"> <div class="schemes-map-container mt-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Scheme Locations</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="schemes-map" style="height: 400px; width: 100%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+<!-- Map and table will be rendered here by JS --></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Add Supplier Modal -->
+                        <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header orange-bg text-white">
+                                        <h5 class="modal-title" id="addSupplierModalLabel">Add New Supplier</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form id="add-supplier-form">
+                                            <div class="mb-3">
+                                                <label for="supplier-name" class="form-label">Name</label>
+                                                <input type="text" class="form-control" id="supplier-name" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="supplier-category" class="form-label">Category</label>
+                                                <input type="text" class="form-control" id="supplier-category" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="supplier-rating" class="form-label">Rating</label>
+                                                <input type="number" class="form-control" id="supplier-rating" min="1" max="5" step="0.1" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="supplier-distance" class="form-label">Distance (km)</label>
+                                                <input type="number" class="form-control" id="supplier-distance" min="0" step="0.1" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="supplier-delivery" class="form-label">Delivery Time</label>
+                                                <input type="text" class="form-control" id="supplier-delivery" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Location (click on map)</label>
+                                                <div id="add-supplier-map" style="width:100%;height:200px;border-radius:8px;"></div>
+                                                <input type="hidden" id="supplier-lat">
+                                                <input type="hidden" id="supplier-lng">
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="button" class="btn btn-orange" id="save-supplier-btn">Add Supplier</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Group Purchase -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-i18n="group_purchases">Group Purchases</div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-primary me-2">${3}</span>
+                                    <span data-i18n="active_groups">Active Groups</span>
+                                </div>
+                                <div>
+                                    <button class="btn btn-outline-primary me-2" id="view-joined-btn">
+                                        <i class="fas fa-user-check me-1"></i>
+                                        <span data-i18n="view_joined">View Joined Groups</span>
+                                    </button>
+                                    <button class="btn btn-primary" id="create-group-btn">
+                                        <i class="fas fa-plus me-1"></i>
+                                        <span data-i18n="create_group">Create Group</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="group-purchases">
+                                <div id="active-groups-list" class="table-responsive mb-0">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th data-i18n="group_name">Group Name</th>
+                                                <th data-i18n="category">Category</th>
+                                                <th data-i18n="progress">Progress</th>
+                                                <th data-i18n="deadline">Deadline</th>
+                                                <th data-i18n="actions">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="active-groups-table">
+                                            <!-- Active groups will be dynamically populated -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div id="joined-groups-list" class="table-responsive mb-0" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 data-i18n="my_groups">My Groups</h5>
+                                        <button class="btn btn-sm btn-outline-secondary" id="back-to-active-btn">
+                                            <i class="fas fa-arrow-left me-1"></i>
+                                            <span data-i18n="back_to_active">Back to Active Groups</span>
+                                        </button>
+                                    </div>
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th data-i18n="group_name">Group Name</th>
+                                                <th data-i18n="category">Category</th>
+                                                <th data-i18n="quantity">Quantity</th>
+                                                <th data-i18n="status">Status</th>
+                                                <th data-i18n="actions">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="joined-groups-table">
+                                            <!-- Joined groups will be dynamically populated -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Autopay Setup -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-i18n="autopay_setup">Autopay Setup</div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <h5 data-i18n="payment_methods">Payment Methods</h5>
+                                <div class="d-flex align-items-center justify-content-between mb-3 p-2 border rounded">
+                                    <div>
+                                        <i class="fas fa-university me-2"></i> <span data-i18n="bank_transfer">Bank Transfer</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" class="autopay-toggle" id="bank-transfer">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between mb-3 p-2 border rounded">
+                                    <div>
+                                        <i class="fab fa-cc-visa me-2"></i> <span data-i18n="credit_card">Credit Card</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" class="autopay-toggle" id="credit-card">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between p-2 border rounded">
+                                    <div>
+                                        <i class="fas fa-mobile-alt me-2"></i> <span data-i18n="upi">UPI</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" class="autopay-toggle" checked id="upi">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 data-i18n="autopay_settings">Autopay Settings</h5>
+                                <div class="mb-3">
+                                    <label for="min-amount" class="form-label" data-i18n="min_amount">Minimum Order Amount</label>
+                                    <input type="range" class="form-range" id="min-amount" min="100" max="5000" step="100" value="1000">
+                                    <div class="d-flex justify-content-between">
+                                        <small>₹100</small>
+                                        <small id="min-amount-value">₹1000</small>
+                                        <small>₹5000</small>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="autopay-day" class="form-label" data-i18n="payment_day">Payment Day</label>
+                                    <select class="form-select" id="autopay-day">
+                                        <option value="1" data-i18n="first_day">First day of month</option>
+                                        <option value="15" data-i18n="fifteenth_day">15th of month</option>
+                                        <option value="30" selected data-i18n="last_day">Last day of month</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Government Schemes Section -->
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="schemes-main-container">
+                        <!-- Schemes Header -->
+                        <div class="schemes-header">
+                            <div class="schemes-header-content">
+                                <div class="schemes-title">
+                                    <i class="fas fa-landmark"></i>
+                                    <h3 data-i18n="government_schemes">Government Schemes</h3>
+                                    <p data-i18n="schemes_subtitle">Discover and apply for government support programs</p>
+                                </div>
+                                <div class="schemes-actions">
+                                    <button class="btn btn-outline-primary" id="schemes-filter-toggle">
+                                        <i class="fas fa-filter me-1"></i>
+                                        <span data-i18n="filter_schemes">Filter</span>
+                                    </button>
+                                    <button class="btn btn-primary" id="view-saved-schemes">
+                                        <i class="fas fa-heart me-1"></i>
+                                        <span data-i18n="saved_schemes">Saved</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Map Section -->
+                        
+                        <!-- Schemes Filter Panel -->
+                        <div class="schemes-filter-panel" id="schemes-filter" style="display: none;">
+                            <div class="filter-grid">
+                                <div class="filter-item">
+                                    <label data-i18n="scheme_category">Category</label>
+                                    <select id="scheme-category-filter">
+                                        <option value="all" data-i18n="all_categories">All Categories</option>
+                                        <option value="financial" data-i18n="financial_support">Financial Support</option>
+                                        <option value="training" data-i18n="training_programs">Training Programs</option>
+                                        <option value="equipment" data-i18n="equipment_subsidy">Equipment Subsidy</option>
+                                        <option value="hygiene" data-i18n="hygiene_certification">Hygiene Certification</option>
+                                        <option value="digital" data-i18n="digital_adoption">Digital Adoption</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <label data-i18n="eligibility">Eligibility</label>
+                                    <select id="scheme-eligibility-filter">
+                                        <option value="all" data-i18n="all_vendors">All Vendors</option>
+                                        <option value="new" data-i18n="new_vendors">New Vendors</option>
+                                        <option value="women" data-i18n="women_vendors">Women Vendors</option>
+                                        <option value="sc_st" data-i18n="sc_st_vendors">SC/ST Vendors</option>
+                                        <option value="small" data-i18n="small_vendors">Small Vendors</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <label data-i18n="deadline">Deadline</label>
+                                    <select id="scheme-deadline-filter">
+                                        <option value="all" data-i18n="all_deadlines">All Deadlines</option>
+                                        <option value="urgent" data-i18n="urgent_deadlines">Urgent (This Month)</option>
+                                        <option value="soon" data-i18n="soon_deadlines">Soon (Next Month)</option>
+                                        <option value="ongoing" data-i18n="ongoing_schemes">Ongoing Schemes</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <label data-i18n="sort_by">Sort By</label>
+                                    <select id="scheme-sort-filter">
+                                        <option value="relevance" data-i18n="relevance">Relevance</option>
+                                        <option value="deadline" data-i18n="deadline">Deadline</option>
+                                        <option value="benefit" data-i18n="benefit_amount">Benefit Amount</option>
+                                        <option value="popularity" data-i18n="popularity">Popularity</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn btn-outline-secondary" id="clear-scheme-filters">
+                                    <i class="fas fa-times me-1"></i>
+                                    <span data-i18n="clear_filters">Clear Filters</span>
+                                </button>
+                                <button class="btn btn-primary" id="apply-scheme-filters">
+                                    <i class="fas fa-check me-1"></i>
+                                    <span data-i18n="apply_filters">Apply Filters</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Schemes Grid -->
+                        <div class="schemes-grid" id="schemes-container">
+                            <!-- Government schemes will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cart Panel -->
+    <div class="cart-panel" id="cart-panel">
+        <div class="cart-header">
+            <h5><i class="fas fa-shopping-cart me-2"></i><span data-i18n="shopping_cart">Shopping Cart</span></h5>
+            <button class="btn-close" id="cart-close"></button>
+        </div>
+        
+        <div class="cart-content">
+            <!-- Cart Items -->
+            <div class="cart-items" id="cart-items">
+                <!-- Cart items will be loaded here -->
+            </div>
+            
+            <!-- Cart Summary -->
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span data-i18n="subtotal">Subtotal:</span>
+                    <span id="cart-subtotal">₹0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span data-i18n="delivery_fee">Delivery Fee:</span>
+                    <span id="cart-delivery">₹0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span data-i18n="tax">Tax (5%):</span>
+                    <span id="cart-tax">₹0.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span data-i18n="total">Total:</span>
+                    <span id="cart-total">₹0.00</span>
+                </div>
+            </div>
+            
+            <!-- Cart Actions -->
+            <div class="cart-actions">
+                <button class="btn btn-outline-secondary w-100 mb-2" id="save-cart">
+                    <i class="fas fa-save me-1"></i>
+                    <span data-i18n="save_for_later">Save for Later</span>
+                </button>
+                <button class="btn btn-primary w-100" id="checkout-btn">
+                    <i class="fas fa-credit-card me-1"></i>
+                    <span data-i18n="proceed_to_checkout">Proceed to Checkout</span>
+                </button>
+            </div>
+            
+            <!-- Saved Carts -->
+            <div class="saved-carts" id="saved-carts" style="display: none;">
+                <h6 class="mt-3 mb-2"><i class="fas fa-bookmark me-1"></i><span data-i18n="saved_carts">Saved Carts</span></h6>
+                <div id="saved-carts-list">
+                    <!-- Saved carts will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cart Overlay -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="vendor.js"></script>
+    
+</body>
+</html> 
