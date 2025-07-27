@@ -305,12 +305,20 @@
                                     <h5 class="mb-0">Nearby Suppliers</h5>
                                     <button class="btn btn-orange" id="add-supplier-btn"><i class="fas fa-plus me-1"></i>Add Supplier</button>
                                 </div>
-                                <div id="suppliers-map" style="width:100%;height:300px;border-radius:12px;">
-                                    <div id="map" style="width:100%;height:100%;"></div>
-                                </div>
                             </div>
                             <div class="col-12">
-                                <div id="suppliers-list"><!-- Map and table will be rendered here by JS --></div>
+                                <div id="suppliers-list"> <div class="schemes-map-container mt-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Scheme Locations</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="schemes-map" style="height: 400px; width: 100%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+<!-- Map and table will be rendered here by JS --></div>
                             </div>
                         </div>
                         
@@ -369,8 +377,64 @@
                     <div class="card h-100">
                         <div class="card-header" data-i18n="group_purchases">Group Purchases</div>
                         <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-primary me-2">${3}</span>
+                                    <span data-i18n="active_groups">Active Groups</span>
+                                </div>
+                                <div>
+                                    <button class="btn btn-outline-primary me-2" id="view-joined-btn">
+                                        <i class="fas fa-user-check me-1"></i>
+                                        <span data-i18n="view_joined">View Joined Groups</span>
+                                    </button>
+                                    <button class="btn btn-primary" id="create-group-btn">
+                                        <i class="fas fa-plus me-1"></i>
+                                        <span data-i18n="create_group">Create Group</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
                             <div id="group-purchases">
-                                <!-- Group purchases will be loaded here -->
+                                <div id="active-groups-list" class="table-responsive mb-0">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th data-i18n="group_name">Group Name</th>
+                                                <th data-i18n="category">Category</th>
+                                                <th data-i18n="progress">Progress</th>
+                                                <th data-i18n="deadline">Deadline</th>
+                                                <th data-i18n="actions">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="active-groups-table">
+                                            <!-- Active groups will be dynamically populated -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div id="joined-groups-list" class="table-responsive mb-0" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 data-i18n="my_groups">My Groups</h5>
+                                        <button class="btn btn-sm btn-outline-secondary" id="back-to-active-btn">
+                                            <i class="fas fa-arrow-left me-1"></i>
+                                            <span data-i18n="back_to_active">Back to Active Groups</span>
+                                        </button>
+                                    </div>
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th data-i18n="group_name">Group Name</th>
+                                                <th data-i18n="category">Category</th>
+                                                <th data-i18n="quantity">Quantity</th>
+                                                <th data-i18n="status">Status</th>
+                                                <th data-i18n="actions">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="joined-groups-table">
+                                            <!-- Joined groups will be dynamically populated -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -459,8 +523,9 @@
                                     </button>
                                 </div>
                             </div>
-                        </div>
-
+                            
+                            <!-- Map Section -->
+                        
                         <!-- Schemes Filter Panel -->
                         <div class="schemes-filter-panel" id="schemes-filter" style="display: none;">
                             <div class="filter-grid">

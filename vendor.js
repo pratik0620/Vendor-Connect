@@ -839,7 +839,65 @@ $(document).ready(function () {
 
     // Initialize Bootstrap components
     initBootstrapComponents();
+
+    // Initialize schemes map after everything else
+    setTimeout(initSchemesMap, 1000);
 });
+
+// Map initialization for Government Schemes
+let schemesMap;
+let schemeMarkers = [];
+
+function initSchemesMap() {
+    // Default to Mumbai coordinates
+    const mumbai = [19.0760, 72.8777];
+    
+    // Initialize Leaflet map for schemes
+    schemesMap = L.map('schemes-map').setView(mumbai, 12);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: ' OpenStreetMap contributors'
+    }).addTo(schemesMap);
+
+    // Add sample schemes locations
+    const schemes = [
+        { 
+            name: "Street Vendor Support Program", 
+            location: [19.0760, 72.8777], 
+            type: "financial",
+            eligibility: "all",
+            deadline: "ongoing"
+        },
+        { 
+            name: "Hygiene Training Center", 
+            location: [19.0860, 72.8877], 
+            type: "training",
+            eligibility: "all",
+            deadline: "urgent"
+        },
+        { 
+            name: "Digital Adoption Hub", 
+            location: [19.0660, 72.8677], 
+            type: "digital",
+            eligibility: "small",
+            deadline: "soon"
+        }
+    ];
+
+    // Add markers for schemes
+    schemes.forEach(scheme => {
+        const marker = L.marker(scheme.location)
+            .bindPopup(`<div>
+                <h5>${scheme.name}</h5>
+                <p>Type: ${scheme.type}</p>
+                <p>Eligibility: ${scheme.eligibility}</p>
+                <p>Deadline: ${scheme.deadline}</p>
+            </div>`)            .addTo(schemesMap);
+
+        schemeMarkers.push(marker);
+    });
+}
 
 // Check authentication
 function checkAuthentication() {

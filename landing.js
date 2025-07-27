@@ -41,14 +41,68 @@ const translations = {
 // Current language
 let currentLang = "en";
 
+
 // Initialize the landing page
 $(document).ready(function () {
     // Setup language switcher
     setupLanguageSwitcher();
 
-    // Load saved language preference
-    loadSavedLanguage();
+    // Initialize Bootstrap components
+    initBootstrapComponents();
+
+    // Initialize map after everything else
+    setTimeout(initMap, 1000);
 });
+
+// Map initialization
+let map;
+let markers = [];
+
+function initMap() {
+    // Default to Mumbai coordinates
+    const mumbai = [19.0760, 72.8777];
+    
+    // Initialize Leaflet map
+    map = L.map('map').setView(mumbai, 12);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: ' OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add sample points of interest
+    const points = [
+        { name: "Dadar Market", location: [19.0760, 72.8777], type: "market" },
+        { name: "Bandra Food Hub", location: [19.0860, 72.8877], type: "food hub" },
+        { name: "Andheri Wholesale", location: [19.0660, 72.8677], type: "wholesale" }
+    ];
+
+    // Add markers for points
+    points.forEach(point => {
+        const marker = L.marker(point.location)
+            .bindPopup(`<div><strong>${point.name}</strong><br>Type: ${point.type}</div>`)            .addTo(map);
+
+        markers.push(marker);
+
+        // Add point to list
+        const pointItem = `<a href="#" class="list-group-item list-group-item-action" 
+                              onclick="map.flyTo([${point.location[0]}, ${point.location[1]}]); return false;">
+                              <i class="fas fa-map-marker-alt me-2"></i>${point.name}
+                              <span class="badge bg-primary float-end">${point.type}</span>
+                          </a>`;
+        $("#supplier-list").append(pointItem);
+    });
+
+    // Update translations for map section
+    $(".map-section h2").text(translations[currentLang].nearby_locations);
+    $(".supplier-list h5").text(translations[currentLang].points_of_interest);
+
+    // Add language change event listener
+    $(".lang-btn").on("click", function() {
+        $(".map-section h2").text(translations[currentLang].nearby_locations);
+        $(".supplier-list h5").text(translations[currentLang].points_of_interest);
+    });
+}
 
 // Language switcher function
 function setupLanguageSwitcher() {
