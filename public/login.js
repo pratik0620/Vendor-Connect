@@ -81,3 +81,31 @@ function updateLanguage() {
         }
     });
 }
+
+// Setup login form
+function setupLoginForm() {
+    $("#login-form").submit(function (e) {
+        e.preventDefault();
+
+        const username = $("#username").val();
+        const password = $("#password").val();
+        const role = $("#role").val();
+
+        // Simple validation
+        if (!username || !password || !role) {
+            alert("Please fill in all fields");
+            return;
+        }
+
+        // Save user data
+        const userData = { username, role };
+        localStorage.setItem("vendorconnect_user", JSON.stringify(userData));
+
+        // Redirect to appropriate dashboard based on role
+        if (role === "vendor") {
+            window.location.href = "vendor.html";
+        } else {
+            window.location.href = "supplier.html";
+        }
+    });
+} 
