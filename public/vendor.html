@@ -20,7 +20,7 @@
     <!-- Google Maps API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwRr0JbQYVMcXIqo&libraries=places"></script>
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div class="app-container">
@@ -180,11 +180,13 @@
                                 <table class="table table-hover" id="vendor-inventory-table">
                                     <thead>
                                         <tr>
-                                            <th data-i18n="product">Product</th>
-                                            <th data-i18n="quantity">Quantity</th>
+                                            <th data-i18n="item_name">Item</th>
+                                            <th data-i18n="supplier_name">Supplier</th>
+                                            <th data-i18n="price">Price</th>
+                                            <th data-i18n="unit">Unit</th>
                                             <th data-i18n="status">Status</th>
+                                            <th data-i18n="last_date">Last Updated</th>
                                             <th data-i18n="actions">Actions</th>
-                                            <th data-i18n="cart">Cart</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -556,7 +558,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script src="vendor.js"></script>
+    <script src="/vendor.js"></script>
     
 </body>
 </html>

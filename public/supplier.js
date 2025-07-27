@@ -233,17 +233,48 @@ $(document).ready(function () {
     initBootstrapComponents();
 });
 
-// Check authentication
+// Get user ID from URL
+function getUserIdFromUrl() {
+    const pathParts = window.location.pathname.split('/');
+    // URL format: /supplier/userId/dashboard
+    if (pathParts.length >= 3 && pathParts[1] === 'supplier') {
+        return pathParts[2];
+    }
+    return null;
+}
+
+// Check authentication and load user data
 function checkAuthentication() {
     const userData = JSON.parse(localStorage.getItem("vendorconnect_user"));
+    const urlUserId = getUserIdFromUrl();
+    
     if (!userData || userData.role !== "supplier") {
         // No user data or wrong role, redirect to login page
-        window.location.href = "login.html";
+        window.location.href = "/login";
         return;
     }
 
-    // User is authenticated as supplier, show dashboard
-    showSupplierDashboard(userData.username);
+    // Load supplier data based on URL user ID
+    loadSupplierData(urlUserId);
+}
+
+// Load supplier data from API
+async function loadSupplierData(supplierId) {
+    try {
+        const response = await fetch(`/api/supplier/${supplierId}/info`);
+        if (response.ok) {
+            const supplierData = await response.json();
+            // Priority: name from Supplier table, then business_name from SupplierInfo, then default
+            const displayName = supplierData.name || supplierData.business_name || 'Supplier';
+            showSupplierDashboard(displayName, supplierId);
+        } else {
+            // If supplier not found, show with generic name
+            showSupplierDashboard('Supplier', supplierId);
+        }
+    } catch (error) {
+        console.error('Error loading supplier data:', error);
+        showSupplierDashboard('Supplier', supplierId);
+    }
 }
 
 // Language switcher function
@@ -339,20 +370,21 @@ function initBootstrapComponents() {
 }
 
 // Show Supplier Dashboard
-function showSupplierDashboard(username) {
+function showSupplierDashboard(displayName, supplierId) {
     $("#supplier-dashboard").show();
-    $("#supplier-name").text(username);
+    $("#supplier-name").text(displayName);
     
-    // Update header link to point to dashboard
-    $(".app-logo").attr("href", "supplier.html");
+    // Store current supplier ID for API calls
+    window.currentSupplierId = supplierId;
+    
+    // Update header link to point to current dashboard
+    $(".app-logo").attr("href", `/${supplierId}/supplier/dashboard`);
 
     // Load supplier dashboard data
-    updateSupplierProductsTable();
-    loadPendingOrders();
-    loadFulfilledOrders();
-    loadGroupOrdersList();
-    loadReviews();
+    loadSupplierProducts(supplierId);
+    loadSupplierOrders(supplierId);
     loadSupplierNotifications();
+    loadSupplierReviews();
 }
 
 // Update supplier products table
@@ -539,4 +571,157 @@ function getStarsHTML(rating) {
     }
 
     return starsHTML;
+}
+
+// API-based loading functions
+
+// Load supplier products from API
+async function loadSupplierProducts(supplierId) {
+    try {
+        const response = await fetch(`/api/inventory/supplier/${supplierId}`);
+        if (response.ok) {
+            const products = await response.json();
+            displaySupplierProducts(products);
+        } else {
+            // Fallback to mock data
+            updateSupplierProductsTable();
+        }
+    } catch (error) {
+        console.error('Error loading supplier products:', error);
+        updateSupplierProductsTable();
+    }
+}
+
+// Display supplier products from API
+function displaySupplierProducts(products) {
+    const productsTable = $("#supplier-products-table tbody");
+    productsTable.empty();
+    
+    products.forEach(product => {
+        const freshness = 'Fresh'; // Default value
+        const hygieneRating = Math.floor(Math.random() * 2) + 4; // 4-5 rating
+        const freshnessClass = "success";
+        
+        productsTable.append(`
+            <tr>
+                <td>${product.item_name}</td>
+                <td>₹${product.price}</td>
+                <td>
+                    <span class="badge bg-${freshnessClass} freshness-tag">
+                        ${freshness}
+                    </span>
+                </td>
+                <td>${getStarsHTML(hygieneRating)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-secondary me-1">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+}
+
+// Load supplier orders from API
+async function loadSupplierOrders(supplierId) {
+    try {
+        const response = await fetch(`/api/orders/supplier/${supplierId}`);
+        if (response.ok) {
+            const orders = await response.json();
+            displaySupplierOrders(orders);
+        } else {
+            // Fallback to mock data
+            loadPendingOrders();
+            loadFulfilledOrders();
+            loadGroupOrdersList();
+        }
+    } catch (error) {
+        console.error('Error loading supplier orders:', error);
+        loadPendingOrders();
+        loadFulfilledOrders();
+        loadGroupOrdersList();
+    }
+}
+
+// Display supplier orders from API
+function displaySupplierOrders(orders) {
+    // Separate orders by status
+    const pendingOrders = orders.filter(order => order.status === 'pending');
+    const fulfilledOrders = orders.filter(order => order.status === 'delivered');
+    
+    // Display pending orders
+    const pendingTable = $("#pending-orders-table tbody");
+    pendingTable.empty();
+    
+    pendingOrders.forEach(order => {
+        pendingTable.append(`
+            <tr>
+                <td>${order.vendor_name || 'Unknown Vendor'}</td>
+                <td>${order.item_name}</td>
+                <td>${order.quantity}kg</td>
+                <td>${order.date}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info me-1">
+                        ${translations[currentLang].verify}
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="fulfillOrder(${order.id})">
+                        ${translations[currentLang].fulfill}
+                    </button>
+                </td>
+            </tr>
+        `);
+    });
+    
+    // Display fulfilled orders
+    const fulfilledTable = $("#fulfilled-orders-table tbody");
+    fulfilledTable.empty();
+    
+    fulfilledOrders.forEach(order => {
+        fulfilledTable.append(`
+            <tr>
+                <td>${order.vendor_name || 'Unknown Vendor'}</td>
+                <td>${order.item_name}</td>
+                <td>₹${order.total_price}</td>
+                <td>${order.date}</td>
+                <td><span class="badge bg-success">Delivered</span></td>
+            </tr>
+        `);
+    });
+    
+    // Load group orders (using mock data for now)
+    loadGroupOrdersList();
+}
+
+// Fulfill order function
+async function fulfillOrder(orderId) {
+    try {
+        const response = await fetch(`/api/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: 'delivered' })
+        });
+        
+        if (response.ok) {
+            alert('Order fulfilled successfully!');
+            // Reload orders
+            if (window.currentSupplierId) {
+                loadSupplierOrders(window.currentSupplierId);
+            }
+        } else {
+            alert('Error fulfilling order');
+        }
+    } catch (error) {
+        console.error('Error fulfilling order:', error);
+        alert('Error fulfilling order');
+    }
+}
+
+// Load supplier reviews (using mock data for now)
+function loadSupplierReviews() {
+    loadReviews();
 }

@@ -848,17 +848,48 @@ $(document).ready(function () {
     initBootstrapComponents();
 });
 
-// Check authentication
+// Get user ID from URL
+function getUserIdFromUrl() {
+    const pathParts = window.location.pathname.split('/');
+    // URL format: /vendor/userId/dashboard
+    if (pathParts.length >= 3 && pathParts[1] === 'vendor') {
+        return pathParts[2];
+    }
+    return null;
+}
+
+// Check authentication and load user data
 function checkAuthentication() {
     const userData = JSON.parse(localStorage.getItem("vendorconnect_user"));
+    const urlUserId = getUserIdFromUrl();
+    
     if (!userData || userData.role !== "vendor") {
         // No user data or wrong role, redirect to login page
-        window.location.href = "login.html";
+        window.location.href = "/login";
         return;
     }
 
-    // User is authenticated as vendor, show dashboard
-    showVendorDashboard(userData.username);
+    // Load vendor data based on URL user ID
+    loadVendorData(urlUserId);
+}
+
+// Load vendor data from API
+async function loadVendorData(vendorId) {
+    try {
+        const response = await fetch(`/api/vendor/${vendorId}/info`);
+        if (response.ok) {
+            const vendorData = await response.json();
+            // Priority: name from Vendor table, then business_name from VendorInfo, then default
+            const displayName = vendorData.name || vendorData.business_name || 'Vendor';
+            showVendorDashboard(displayName, vendorId);
+        } else {
+            // If vendor not found, show with generic name
+            showVendorDashboard('Vendor', vendorId);
+        }
+    } catch (error) {
+        console.error('Error loading vendor data:', error);
+        showVendorDashboard('Vendor', vendorId);
+    }
 }
 
 // Language switcher function
@@ -1749,12 +1780,15 @@ function initBootstrapComponents() {
 }
 
 // Show Vendor Dashboard
-function showVendorDashboard(username) {
+function showVendorDashboard(displayName, vendorId) {
     $("#vendor-dashboard").show();
-    $("#vendor-name").text(username);
+    $("#vendor-name").text(displayName);
     
-    // Update header link to point to dashboard
-    $(".app-logo").attr("href", "vendor.html");
+    // Store current vendor ID for API calls
+    window.currentVendorId = vendorId;
+    
+    // Update header link to point to current dashboard
+    $(".app-logo").attr("href", `/${vendorId}/vendor/dashboard`);
 
     // Load vendor dashboard data
     loadVendorInventory();
@@ -1775,35 +1809,98 @@ function loadVendorInventory() {
     const inventoryTable = $("#vendor-inventory-table tbody");
     inventoryTable.empty();
 
-    mockData.vendorInventory.forEach(item => {
-        const statusClass = item.status === "low" ? "stock-low" : "stock-ok";
-        const statusText = item.status === "low" ?
-            translations[currentLang].low_stock :
-            translations[currentLang].ok_stock;
+    // Show loading indicator
+    inventoryTable.append(`
+        <tr>
+            <td colspan="6" class="text-center">
+                <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                Loading inventory...
+            </td>
+        </tr>
+    `);
 
-        inventoryTable.append(`
-            <tr>
-                <td>${item.name}</td>
-                <td>${item.quantity} kg</td>
-                <td><span class="${statusClass}">${statusText}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary">
-                        ${translations[currentLang].order}
-                    </button>
-                </td>
-                <td>
-                    <button class="add-to-cart-btn" onclick="addToCart({
-                        id: 'inv_${item.name.toLowerCase().replace(/\s+/g, '_')}',
-                        name: '${item.name}',
-                        price: ${Math.floor(Math.random() * 50) + 30},
-                        supplier: 'Local Market'
-                    })">
-                        <i class="fas fa-cart-plus"></i>
-                        ${translations[currentLang].add_to_cart}
-                    </button>
-                </td>
-            </tr>
-        `);
+    // Fetch inventory data from API
+    $.ajax({
+        url: `/api/vendor/${window.currentVendorId}/inventory`,
+        method: 'GET',
+        success: function(response) {
+            inventoryTable.empty();
+            
+            if (response.success && response.data && response.data.length > 0) {
+                response.data.forEach(item => {
+                    // Determine status based on quantity
+                    let statusClass, statusText;
+                    if (item.quantity <= 5) {
+                        statusClass = "stock-low";
+                        statusText = translations[currentLang].low_stock || "Low Stock";
+                    } else if (item.quantity <= 15) {
+                        statusClass = "stock-medium";
+                        statusText = translations[currentLang].medium_stock || "Medium Stock";
+                    } else {
+                        statusClass = "stock-ok";
+                        statusText = translations[currentLang].ok_stock || "In Stock";
+                    }
+
+                    // Format date
+                    const lastUpdated = item.last_date ? 
+                        new Date(item.last_date).toLocaleDateString() : 
+                        new Date(item.date).toLocaleDateString();
+
+                    inventoryTable.append(`
+                        <tr>
+                            <td>${item.item_name}</td>
+                            <td>${item.supplier_name || 'Unknown Supplier'}</td>
+                            <td>₹${parseFloat(item.price).toFixed(2)}</td>
+                            <td>${item.unit}</td>
+                            <td><span class="badge ${statusClass}">${statusText}</span></td>
+                            <td>${lastUpdated}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary me-1" 
+                                        onclick="orderItem('${item.id}', '${item.item_name}')">
+                                    <i class="fas fa-shopping-basket"></i>
+                                    ${translations[currentLang].order || 'Order'}
+                                </button>
+                                <button class="add-to-cart-btn btn btn-sm btn-outline-success" 
+                                        onclick="addToCart({
+                                            id: 'inv_${item.id}',
+                                            name: '${item.item_name}',
+                                            price: ${parseFloat(item.price)},
+                                            supplier: '${item.supplier_name || 'Unknown'}',
+                                            unit: '${item.unit}'
+                                        })">
+                                    <i class="fas fa-cart-plus"></i>
+                                    ${translations[currentLang].add_to_cart || 'Add to Cart'}
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            } else {
+                inventoryTable.append(`
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">
+                            <i class="fas fa-box-open fa-2x mb-2"></i><br>
+                            No inventory items found
+                        </td>
+                    </tr>
+                `);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading inventory:', error);
+            inventoryTable.empty();
+            inventoryTable.append(`
+                <tr>
+                    <td colspan="7" class="text-center text-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Failed to load inventory data. Please refresh the page.
+                    </td>
+                </tr>
+            `);
+            showAlert('Failed to load inventory data', 'error');
+        }
     });
 }
 

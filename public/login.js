@@ -97,15 +97,40 @@ function setupLoginForm() {
             return;
         }
 
-        // Save user data
-        const userData = { username, role };
-        localStorage.setItem("vendorconnect_user", JSON.stringify(userData));
+        // Show loading state
+        const submitBtn = $("button[type='submit']");
+        const originalText = submitBtn.text();
+        submitBtn.prop('disabled', true).text('Logging in...');
 
-        // Redirect to appropriate dashboard based on role
-        if (role === "vendor") {
-            window.location.href = "vendor.html";
-        } else {
-            window.location.href = "supplier.html";
-        }
+        // Perform login request to the API
+        $.ajax({
+            type: "POST",
+            url: "/api/login",
+            data: JSON.stringify({ username, password, role }),
+            contentType: "application/json",
+            success: function(response) {
+                if (response.success) {
+                    // Save user data with ID
+                    const userData = { 
+                        id: response.user.id,
+                        username: response.user.name, 
+                        role: response.user.role 
+                    };
+                    localStorage.setItem("vendorconnect_user", JSON.stringify(userData));
+                    
+                    // Redirect to user-specific dashboard URL format: /role/userId/dashboard
+                    const dashboardUrl = `/${response.user.role}/${response.user.id}/dashboard`;
+                    window.location.href = dashboardUrl;
+                }
+                    alert("Login failed: " + (response.error || "Unknown error"));
+                    submitBtn.prop('disabled', false).text(originalText);
+                }
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : "An error occurred during login";
+                alert("Login failed: " + errorMsg);
+                submitBtn.prop('disabled', false).text(originalText);
+            }
+        });
     });
 }

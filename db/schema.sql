@@ -53,6 +53,7 @@ CREATE TABLE Inventory (
     item_name VARCHAR(100),
     price DECIMAL(10, 2),
     unit VARCHAR(20),
+    quantity INT NOT NULL,
     date DATE,
     last_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -97,4 +98,14 @@ CREATE TABLE Shipping (
     shipping_state TEXT,
     FOREIGN KEY (order_id) REFERENCES OrderTable(id),
     FOREIGN KEY (vendor_id) REFERENCES Vendor(id)
+);
+
+CREATE TABLE IF NOT EXISTS Cart (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vendor_id INT NOT NULL,
+    item_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    date_added DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (vendor_id) REFERENCES Vendor(id),
+    FOREIGN KEY (item_id) REFERENCES Inventory(id)
 );
