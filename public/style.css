@@ -164,15 +164,7 @@ body {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Notification styles */
-.notification-item {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    padding: 10px 0;
-}
 
-.notification-item:last-child {
-    border-bottom: none;
-}
 
 /* Supplier item */
 .supplier-item {

@@ -1,3 +1,10 @@
+// --- Login Redirect ---
+(function() {
+    const user = JSON.parse(localStorage.getItem('vendorconnect_user') || 'null');
+    if (!user || user.role !== 'supplier') {
+        window.location.href = 'login.html';
+    }
+})();
 // Language translations for supplier dashboard
 const translations = {
     en: {
@@ -93,8 +100,8 @@ const translations = {
         product_name: "उत्पाद का नाम",
         price_per_kg: "प्रति किलो मूल्य (₹)",
         fresh: "ताजा (< 24 घंटे)",
-        good: "अच्छा (1-3 दिन)",
-        regular: "साधारण (3-7 दिन)",
+        good: "अच्छा (1-3 दिवस)",
+        regular: "साधारण (3-7 दिवस)",
         available_quantity: "उपलब्ध मात्रा (किलो)",
         cancel: "रद्द करें",
         save_product: "उत्पाद सहेजें",
@@ -173,370 +180,428 @@ const translations = {
     }
 };
 
-// Mock data for supplier dashboard
-const mockData = {
-    supplierProducts: [
-        { name: "Potato", price: 35, freshness: "Fresh", hygieneRating: 5, quantity: 200 },
-        { name: "Tomato", price: 60, freshness: "Fresh", hygieneRating: 5, quantity: 150 },
-        { name: "Onion", price: 40, freshness: "Good", hygieneRating: 4, quantity: 300 },
-        { name: "Capsicum", price: 75, freshness: "Fresh", hygieneRating: 5, quantity: 100 },
-        { name: "Ginger", price: 120, freshness: "Good", hygieneRating: 4, quantity: 80 }
-    ],
-    pendingOrders: [
-        { vendor: "Rajesh", items: "Potato, Onion, Tomato", quantity: "10kg, 5kg, 8kg", date: "Today, 10:30 AM" },
-        { vendor: "Anita", items: "Capsicum, Ginger", quantity: "3kg, 1kg", date: "Today, 11:45 AM" }
-    ],
-    fulfilledOrders: [
-        { vendor: "Prakash", items: "Potato, Onion", amount: "₹850", deliveryDate: "Yesterday", status: "Delivered" },
-        { vendor: "Rajesh", items: "Tomato, Capsicum", amount: "₹1,350", deliveryDate: "Oct 15, 2023", status: "Delivered" }
-    ],
-    groupOrders: [
-        {
-            id: 1,
-            title: "Bulk Vegetable Order",
-            items: ["Potato (150kg)", "Onion (100kg)", "Tomato (80kg)"],
-            vendors: ["Rajesh", "Anita", "Prakash", "+3 more"],
-            totalAmount: "₹15,200",
-            status: "Processing",
-            deadline: "Today, 4 PM"
-        }
-    ],
-    reviews: [
+// --- Dashboard State ---
+let supplierProducts = [
+    { name: "Potato", category: "Vegetable", price: 35, stock: 200, status: "Active", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=facearea&w=60&h=60", description: "Fresh potatoes from local farms." },
+    { name: "Tomato", category: "Vegetable", price: 60, stock: 150, status: "Active", image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=facearea&w=60&h=60", description: "Juicy red tomatoes." },
+    { name: "Onion", category: "Vegetable", price: 40, stock: 300, status: "Low Stock", image: "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=facearea&w=60&h=60", description: "Crisp onions for all uses." },
+    { name: "Capsicum", category: "Vegetable", price: 75, stock: 100, status: "Active", image: "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=facearea&w=60&h=60", description: "Green capsicum, farm fresh." },
+    { name: "Ginger", category: "Spice", price: 120, stock: 80, status: "Active", image: "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=facearea&w=60&h=60", description: "Aromatic ginger roots." }
+];
+let selectedProductIndex = null;
+let notifications = [
+    { icon: "fa-shopping-bag", text: "Rajesh placed a new order worth ₹950.", time: "30 min ago", read: false },
+    { icon: "fa-users", text: "New group purchase request for vegetables from 5 vendors.", time: "2 hours ago", read: false },
+    { icon: "fa-comment", text: "Anita: 'The tomatoes were exceptionally good this time!'", time: "1 day ago", read: false }
+];
+let reviews = [
         { name: "Rajesh", rating: 5, text: "Excellent quality vegetables, always fresh.", date: "3 days ago" },
         { name: "Anita", rating: 4, text: "Good service and timely delivery.", date: "1 week ago" },
         { name: "Prakash", rating: 5, text: "Best supplier in the area. Never disappoints.", date: "2 weeks ago" },
         { name: "Sanjay", rating: 4, text: "Quality products at reasonable prices.", date: "2 weeks ago" },
         { name: "Meera", rating: 5, text: "Very reliable and consistent quality.", date: "3 weeks ago" }
-    ],
-    supplierNotifications: [
-        { type: "new_order", title: "New Order", message: "Rajesh placed a new order worth ₹950.", time: "30 min ago" },
-        { type: "group_order", title: "Group Order", message: "New group purchase request for vegetables from 5 vendors.", time: "2 hours ago" },
-        { type: "vendor_comment", title: "Vendor Comment", message: "Anita: 'The tomatoes were exceptionally good this time!'", time: "1 day ago" }
-    ]
+];
+let pendingOrders = [
+    { vendor: "Rajesh", items: "Potato, Onion, Tomato", quantity: "10kg, 5kg, 8kg", date: "Today, 10:30 AM" },
+    { vendor: "Anita", items: "Capsicum, Ginger", quantity: "3kg, 1kg", date: "Today, 11:45 AM" }
+];
+let fulfilledOrders = [
+    { vendor: "Prakash", items: "Potato, Onion", amount: "₹850", deliveryDate: "Yesterday", status: "Delivered" },
+    { vendor: "Rajesh", items: "Tomato, Capsicum", amount: "₹1,350", deliveryDate: "Oct 15, 2023", status: "Delivered" }
+];
+let groupOrders = [
+    { id: 1, title: "Bulk Vegetable Order", items: ["Potato (150kg)", "Onion (100kg)", "Tomato (80kg)"], vendors: ["Rajesh", "Anita", "Prakash", "+3 more"], totalAmount: "₹15,200", status: "Processing", deadline: "Today, 4 PM" }
+];
+let profile = {
+    name: "Ganesh Trading Co.",
+    contact: "+91 98765 43210",
+    areas: "Andheri, Bandra, Dadar, Juhu",
+    hours: "6:00 AM - 8:00 PM",
+    hygiene: "Daily cleaning of storage areas. Temperature controlled storage for perishables. Regular staff hygiene training. FSSAI certified premises."
 };
 
-// Current language
-let currentLang = "en";
-
-// Initialize the supplier dashboard
-$(document).ready(function () {
-    // Check authentication first
-    checkAuthentication();
-
-    // Setup language switcher
-    setupLanguageSwitcher();
-
-    // Setup event listeners
-    setupEventListeners();
-
-    // Initialize Bootstrap components
-    initBootstrapComponents();
-});
-
-// Check authentication
-function checkAuthentication() {
-    const userData = JSON.parse(localStorage.getItem("vendorconnect_user"));
-    if (!userData || userData.role !== "supplier") {
-        // No user data or wrong role, redirect to login page
-        window.location.href = "login.html";
-        return;
-    }
-
-    // User is authenticated as supplier, show dashboard
-    showSupplierDashboard(userData.username);
-}
-
-// Language switcher function
-function setupLanguageSwitcher() {
-    $(".lang-btn").click(function () {
-        currentLang = $(this).data("lang");
-        $(".lang-btn").removeClass("active");
-        $(this).addClass("active");
-        updateLanguage();
-
-        // Save language preference
-        localStorage.setItem("vendorconnect_lang", currentLang);
-    });
-
-    // Load saved language preference
-    const savedLang = localStorage.getItem("vendorconnect_lang");
-    if (savedLang && translations[savedLang]) {
-        currentLang = savedLang;
-        $(`.lang-btn[data-lang="${currentLang}"]`).click();
-    }
-}
-
-// Update all text content based on selected language
-function updateLanguage() {
-    $("[data-i18n]").each(function () {
-        const key = $(this).data("i18n");
-        if (translations[currentLang] && translations[currentLang][key]) {
-            $(this).text(translations[currentLang][key]);
-        }
-    });
-}
-
-// Setup event listeners
-function setupEventListeners() {
-    // Logout button
-    $("#supplier-logout-btn").click(function () {
-        localStorage.removeItem("vendorconnect_user");
-        window.location.href = "login.html";
-    });
-
-    // Refresh data button
-    $("#supplier-refresh-data").click(function () {
-        location.reload();
-    });
-
-    // Save product button
-    $("#save-product").click(function () {
-        const productName = $("#product-name").val();
-        const productPrice = $("#product-price").val();
-        const productFreshness = $("#product-freshness").val();
-        const hygieneRating = $("#hygiene-rating").val();
-        const availableQuantity = $("#available-quantity").val();
-
-        // Validate inputs
-        if (!productName || !productPrice || !productFreshness || !hygieneRating || !availableQuantity) {
-            alert("Please fill all fields");
-            return;
-        }
-
-        // Add product to the list (in a real app, this would be sent to a server)
-        mockData.supplierProducts.push({
-            name: productName,
-            price: parseInt(productPrice),
-            freshness: productFreshness,
-            hygieneRating: parseInt(hygieneRating),
-            quantity: parseInt(availableQuantity)
-        });
-
-        // Update the product table
-        updateSupplierProductsTable();
-
-        // Close the modal
-        $("#addProductModal").modal("hide");
-
-        // Reset the form
-        $("#add-product-form")[0].reset();
-    });
-
-    // Supplier profile form
-    $("#supplier-profile-form").submit(function (e) {
-        e.preventDefault();
-        alert("Profile updated successfully!");
-    });
-}
-
-// Initialize Bootstrap components
-function initBootstrapComponents() {
-    // Initialize any Bootstrap components if needed
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-}
-
-// Show Supplier Dashboard
-function showSupplierDashboard(username) {
-    $("#supplier-dashboard").show();
-    $("#supplier-name").text(username);
-    
-    // Update header link to point to dashboard
-    $(".app-logo").attr("href", "supplier.html");
-
-    // Load supplier dashboard data
-    updateSupplierProductsTable();
-    loadPendingOrders();
-    loadFulfilledOrders();
-    loadGroupOrdersList();
-    loadReviews();
-    loadSupplierNotifications();
-}
-
-// Update supplier products table
-function updateSupplierProductsTable() {
-    const productsTable = $("#supplier-products-table tbody");
-    productsTable.empty();
-
-    mockData.supplierProducts.forEach(product => {
-        const freshnessClass = product.freshness === "Fresh" ? "success" :
-            (product.freshness === "Good" ? "info" : "warning");
-
-        productsTable.append(`
-            <tr>
-                <td>${product.name}</td>
-                <td>₹${product.price}</td>
-                <td>
-                    <span class="badge bg-${freshnessClass} freshness-tag">
-                        ${product.freshness}
-                    </span>
-                </td>
-                <td>${getStarsHTML(product.hygieneRating)}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-secondary me-1">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `);
-    });
-}
-
-// Load pending orders
-function loadPendingOrders() {
-    const ordersTable = $("#pending-orders-table tbody");
-    ordersTable.empty();
-
-    mockData.pendingOrders.forEach(order => {
-        ordersTable.append(`
-            <tr>
-                <td>${order.vendor}</td>
-                <td>${order.items}</td>
-                <td>${order.quantity}</td>
-                <td>${order.date}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-info me-1">
-                        ${translations[currentLang].verify}
-                    </button>
-                    <button class="btn btn-sm btn-outline-success">
-                        ${translations[currentLang].fulfill}
-                    </button>
-                </td>
-            </tr>
-        `);
-    });
-}
-
-// Load fulfilled orders
-function loadFulfilledOrders() {
-    const ordersTable = $("#fulfilled-orders-table tbody");
-    ordersTable.empty();
-
-    mockData.fulfilledOrders.forEach(order => {
-        const statusClass = order.status === "Delivered" ? "success" : "warning";
-
-        ordersTable.append(`
-            <tr>
-                <td>${order.vendor}</td>
-                <td>${order.items}</td>
-                <td>${order.amount}</td>
-                <td>${order.deliveryDate}</td>
-                <td><span class="badge bg-${statusClass}">${order.status}</span></td>
-            </tr>
-        `);
-    });
-}
-
-// Load group orders list
-function loadGroupOrdersList() {
-    const groupOrdersList = $("#group-orders-list");
-    groupOrdersList.empty();
-
-    mockData.groupOrders.forEach(order => {
-        const itemsList = order.items.map(item => <li>${item}</li>).join("");
-
-        groupOrdersList.append(`
-            <div class="card mb-3">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <strong>${order.title}</strong>
-                    <span class="badge bg-primary">${order.status}</span>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p class="mb-1"><strong>${translations[currentLang].items}:</strong></p>
-                            <ul class="ps-3">
-                                ${itemsList}
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <p class="mb-1"><strong>${translations[currentLang].vendors}:</strong> ${order.vendors.join(", ")}</p>
-                            <p class="mb-1"><strong>${translations[currentLang].total_amount}:</strong> ${order.totalAmount}</p>
-                            <p class="mb-3"><strong>${translations[currentLang].deadline}:</strong> ${order.deadline}</p>
-                            <button class="btn btn-sm btn-success">
-                                ${translations[currentLang].complete}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `);
-    });
-}
-
-// Load reviews
-function loadReviews() {
-    const reviewsDiv = $("#recent-reviews");
-    reviewsDiv.empty();
-
-    mockData.reviews.forEach(review => {
-        reviewsDiv.append(`
-            <div class="review-item mb-3 pb-3 border-bottom">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <strong>${translations[currentLang].review_from} ${review.name}</strong>
-                    <div class="stars">${getStarsHTML(review.rating)}</div>
-                </div>
-                <p class="mb-1">${review.text}</p>
-                <small class="text-muted">${review.date}</small>
-            </div>
-        `);
-    });
-}
-
-// Load supplier notifications
-function loadSupplierNotifications() {
-    const notificationsDiv = $("#supplier-notifications");
-    notificationsDiv.empty();
-
-    mockData.supplierNotifications.forEach(notification => {
-        let icon = "fa-bell";
-        if (notification.type === "new_order") icon = "fa-shopping-bag";
-        if (notification.type === "group_order") icon = "fa-users";
-        if (notification.type === "vendor_comment") icon = "fa-comment";
-
-        notificationsDiv.append(`
-            <div class="notification-item">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <i class="fas ${icon} fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="mb-0">${translations[currentLang][notification.type]}</h6>
-                        <p class="mb-0">${notification.message}</p>
-                        <small class="text-muted">${notification.time}</small>
-                    </div>
-                </div>
-            </div>
-        `);
-    });
-}
-
-// Helper function to generate HTML for star ratings
+// --- Utility ---
 function getStarsHTML(rating) {
     let starsHTML = "";
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
-
-    // Add full stars
-    for (let i = 0; i < fullStars; i++) {
-        starsHTML += '<i class="fas fa-star"></i> ';
-    }
-
-    // Add half star if needed
-    if (hasHalfStar) {
-        starsHTML += '<i class="fas fa-star-half-alt"></i> ';
-    }
-
-    // Add empty stars
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    for (let i = 0; i < emptyStars; i++) {
-        starsHTML += '<i class="far fa-star"></i> ';
-    }
-
+    for (let i = 0; i < fullStars; i++) starsHTML += '<i class="fas fa-star"></i> ';
+    if (hasHalfStar) starsHTML += '<i class="fas fa-star-half-alt"></i> ';
+    for (let i = 0; i < 5 - fullStars - (hasHalfStar ? 1 : 0); i++) starsHTML += '<i class="far fa-star"></i> ';
     return starsHTML;
 }
+
+// --- Product Catalog ---
+function renderProductsTable() {
+    const tbody = $("#supplier-products-table tbody");
+    tbody.empty();
+    supplierProducts.forEach((p, i) => {
+        tbody.append(`
+            <tr>
+                <td><img src="${p.image}" alt="${p.name}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;"></td>
+                <td>${p.name}</td>
+                <td>${p.category}</td>
+                <td>₹${p.price}</td>
+                <td><input type="number" class="form-control form-control-sm product-stock-input" data-index="${i}" value="${p.stock}" min="0" style="width:80px;"></td>
+                <td><span class="badge bg-${p.status === "Low Stock" ? "danger" : "success"}">${p.status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-secondary me-1 edit-product-btn" data-index="${i}"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger delete-product-btn" data-index="${i}"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `);
+    });
+}
+
+function filterProductsTable() {
+    const q = $("#product-search").val().toLowerCase();
+    $("#supplier-products-table tbody tr").each(function() {
+        const name = $(this).find("td").eq(1).text().toLowerCase();
+        $(this).toggle(name.includes(q));
+    });
+}
+
+// --- Orders ---
+function renderPendingOrders() {
+    const tbody = $("#pending-orders-table tbody");
+    tbody.empty();
+    pendingOrders.forEach((o, i) => {
+        tbody.append(`
+            <tr>
+                <td>${o.vendor}</td>
+                <td>${o.items}</td>
+                <td>${o.quantity}</td>
+                <td>${o.date}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info me-1 verify-order-btn" data-index="${i}" title="Verify" data-bs-toggle="tooltip"><i class="fas fa-check"></i></button>
+                    <button class="btn btn-sm btn-outline-success fulfill-order-btn" data-index="${i}" title="Fulfill" data-bs-toggle="tooltip"><i class="fas fa-truck"></i></button>
+                    <button class="btn btn-sm btn-outline-orange view-order-btn" data-index="${i}" title="View Details" data-bs-toggle="tooltip"><i class="fas fa-eye"></i></button>
+                </td>
+            </tr>
+        `);
+    });
+}
+function renderFulfilledOrders() {
+    const tbody = $("#fulfilled-orders-table tbody");
+    tbody.empty();
+    fulfilledOrders.forEach((o, i) => {
+        tbody.append(`
+            <tr>
+                <td>${o.vendor}</td>
+                <td>${o.items}</td>
+                <td>${o.amount}</td>
+                <td>${o.deliveryDate}</td>
+                <td><span class="badge bg-success">${o.status}</span> <button class="btn btn-sm btn-outline-orange ms-2 view-order-btn" data-index="${i}" data-type="fulfilled" title="View Details" data-bs-toggle="tooltip"><i class="fas fa-eye"></i></button></td>
+            </tr>
+        `);
+    });
+}
+function renderGroupOrders() {
+    const list = $("#group-orders-list");
+    list.empty();
+    groupOrders.forEach((o, idx) => {
+        const itemsList = o.items.map(item => `<li>${item}</li>`).join("");
+        list.append(`
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <strong>${o.title}</strong>
+                    <span class="badge bg-primary">${o.status}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Items:</strong></p>
+                            <ul class="ps-3">${itemsList}</ul>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Vendors:</strong> ${o.vendors.join(", ")}</p>
+                            <p class="mb-1"><strong>Total Amount:</strong> ${o.totalAmount}</p>
+                            <p class="mb-3"><strong>Deadline:</strong> ${o.deadline}</p>
+                            <button class="btn btn-sm btn-success complete-group-btn" data-index="${idx}">Complete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    });
+}
+
+// --- Reviews ---
+function renderRecentReviews() {
+    const div = $("#recent-reviews");
+    div.empty();
+    reviews.slice(0, 3).forEach(r => {
+        div.append(`
+            <div class="review-item mb-3 pb-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <strong>Review from ${r.name}</strong>
+                    <div class="stars">${getStarsHTML(r.rating)}</div>
+                </div>
+                <p class="mb-1">${r.text}</p>
+                <small class="text-muted">${r.date}</small>
+            </div>
+        `);
+    });
+}
+function showAllReviewsModal() {
+    let html = `<div class="modal fade" id="allReviewsModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header orange-bg text-white"><h5 class="modal-title">All Reviews</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">`;
+    reviews.forEach(r => {
+        html += `<div class="mb-3 pb-3 border-bottom"><div class="d-flex justify-content-between align-items-center mb-1"><strong>Review from ${r.name}</strong><div class="stars">${getStarsHTML(r.rating)}</div></div><p class="mb-1">${r.text}</p><small class="text-muted">${r.date}</small></div>`;
+    });
+    html += `</div></div></div></div>`;
+    $("#allReviewsModal").remove();
+    $("body").append(html);
+    new bootstrap.Modal(document.getElementById("allReviewsModal")).show();
+}
+
+// --- Notifications ---
+function renderNotifications() {
+    const div = $("#supplier-notifications");
+    div.empty();
+    notifications.forEach((n, i) => {
+        div.append(`
+            <div class="notification-item${n.read ? '' : ' bg-light'} d-flex align-items-center mb-2 p-2 rounded">
+                <div class="me-3"><i class="fas ${n.icon} fa-lg orange-text"></i></div>
+                    <div>
+                    <div>${n.text}</div>
+                    <small class="text-muted">${n.time}</small>
+                </div>
+            </div>
+        `);
+    });
+}
+
+// --- Stats & Chart ---
+function updateStats() {
+    $("#stat-products").text(supplierProducts.length);
+    $("#stat-orders").text(pendingOrders.length + fulfilledOrders.length);
+    $("#stat-rating").text((reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1));
+}
+function renderSalesChart() {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Sales (kg)',
+                data: [120, 150, 90, 180, 200, 170, 140],
+                backgroundColor: 'rgba(255, 107, 53, 0.7)'
+            }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+}
+
+// --- Profile ---
+function renderProfile() {
+    $("#business-name").val(profile.name);
+    $("#contact-number").val(profile.contact);
+    $("#delivery-areas").val(profile.areas);
+    $("#business-hours").val(profile.hours);
+    $("#hygiene-practices").val(profile.hygiene);
+}
+
+// --- Toast Notification ---
+function showToast(message, type = 'info') {
+    const toastId = 'dashboard-toast';
+    $("#" + toastId).remove();
+    const color = type === 'success' ? 'bg-success' : type === 'danger' ? 'bg-danger' : 'bg-orange';
+    const html = `<div id="${toastId}" class="toast align-items-center text-white ${color} border-0 position-fixed bottom-0 end-0 m-4" role="alert" aria-live="assertive" aria-atomic="true" style="z-index:9999;min-width:220px;">
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>`;
+    $("body").append(html);
+    const toast = new bootstrap.Toast(document.getElementById(toastId), { delay: 2500 });
+    toast.show();
+}
+
+// --- Order Details Modal ---
+function showOrderDetailsModal(order, type = 'pending') {
+    let html = `<div class="modal fade" id="orderDetailsModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header orange-bg text-white"><h5 class="modal-title">Order Details</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <div><strong>Vendor:</strong> ${order.vendor || ''}</div>
+            <div><strong>Items:</strong> ${order.items || ''}</div>
+            <div><strong>Quantity:</strong> ${order.quantity || order.amount || ''}</div>
+            <div><strong>Date:</strong> ${order.date || order.deliveryDate || ''}</div>
+            <div><strong>Status:</strong> <span class="badge bg-${type === 'pending' ? 'warning' : 'success'}">${order.status || (type === 'pending' ? 'Pending' : 'Delivered')}</span></div>
+        </div>
+        <div class="modal-footer">`;
+    if (type === 'pending') {
+        html += `<button type="button" class="btn btn-info me-2" id="modal-verify-btn">Verify</button><button type="button" class="btn btn-success" id="modal-fulfill-btn">Fulfill</button>`;
+    }
+    html += `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div></div>`;
+    $("#orderDetailsModal").remove();
+    $("body").append(html);
+    const modal = new bootstrap.Modal(document.getElementById("orderDetailsModal"));
+    modal.show();
+    // Modal actions
+    $("#modal-verify-btn").off().click(function() { showToast('Order verified!', 'success'); modal.hide(); });
+    $("#modal-fulfill-btn").off().click(function() { showToast('Order fulfilled!', 'success'); modal.hide(); });
+}
+
+// --- Event Listeners ---
+$(document).ready(function () {
+    renderProductsTable();
+    renderPendingOrders();
+    renderFulfilledOrders();
+    renderGroupOrders();
+    renderRecentReviews();
+    renderNotifications();
+    updateStats();
+    renderSalesChart();
+    renderProfile();
+
+    // Product search
+    $("#product-search").on("input", filterProductsTable);
+
+    // Add product
+    $("#add-product-btn").click(function () {
+        selectedProductIndex = null;
+        $("#product-form")[0].reset();
+        $("#productModalLabel").text("Add Product");
+        $("#productModal").modal("show");
+    });
+    // Edit product
+    $(document).on("click", ".edit-product-btn", function () {
+        selectedProductIndex = $(this).data("index");
+        const p = supplierProducts[selectedProductIndex];
+        $("#modal-product-name").val(p.name);
+        $("#modal-product-category").val(p.category);
+        $("#modal-product-price").val(p.price);
+        $("#modal-product-stock").val(p.stock);
+        $("#modal-product-image").val(p.image);
+        $("#modal-product-description").val(p.description);
+        $("#productModalLabel").text("Edit Product");
+        $("#productModal").modal("show");
+    });
+    // Save product (add or edit)
+    $("#save-product-modal").click(function () {
+        const p = {
+            name: $("#modal-product-name").val(),
+            category: $("#modal-product-category").val(),
+            price: parseInt($("#modal-product-price").val()),
+            stock: parseInt($("#modal-product-stock").val()),
+            image: $("#modal-product-image").val() || 'https://via.placeholder.com/60x60?text=Product',
+            description: $("#modal-product-description").val(),
+            status: "Active"
+        };
+        if (p.stock < 20) p.status = "Low Stock";
+        if (selectedProductIndex === null) {
+            supplierProducts.push(p);
+        } else {
+            supplierProducts[selectedProductIndex] = p;
+        }
+        renderProductsTable();
+        updateStats();
+        $("#productModal").modal("hide");
+    });
+    // Delete product
+    $(document).on("click", ".delete-product-btn", function () {
+        const idx = $(this).data("index");
+        if (confirm("Delete this product?")) {
+            supplierProducts.splice(idx, 1);
+            renderProductsTable();
+            updateStats();
+        }
+    });
+    // Inline stock editing
+    $(document).on("change", ".product-stock-input", function () {
+        const idx = $(this).data("index");
+        const val = parseInt($(this).val());
+        if (!isNaN(val)) {
+            supplierProducts[idx].stock = val;
+            supplierProducts[idx].status = val < 20 ? "Low Stock" : "Active";
+            renderProductsTable();
+            updateStats();
+        }
+    });
+    // Reviews modal
+    $("#view-all-reviews").click(showAllReviewsModal);
+    // Mark all notifications as read
+    $("#mark-all-read").click(function () {
+        notifications.forEach(n => n.read = true);
+        renderNotifications();
+    });
+    // Profile editing
+    $("#edit-profile-btn").click(function () {
+        $("#edit-profile-name").val(profile.name);
+        $("#edit-profile-contact").val(profile.contact);
+        $("#edit-profile-areas").val(profile.areas);
+        $("#edit-profile-hours").val(profile.hours);
+        $("#edit-profile-hygiene").val(profile.hygiene);
+        $("#editProfileModal").modal("show");
+    });
+    $("#save-profile-modal").click(function () {
+        profile.name = $("#edit-profile-name").val();
+        profile.contact = $("#edit-profile-contact").val();
+        profile.areas = $("#edit-profile-areas").val();
+        profile.hours = $("#edit-profile-hours").val();
+        profile.hygiene = $("#edit-profile-hygiene").val();
+        renderProfile();
+        $("#editProfileModal").modal("hide");
+        $("#supplier-name").text(profile.name);
+    });
+});
+
+// --- Event Listeners for Orders ---
+$(document).on("click", ".verify-order-btn", function () {
+    const idx = $(this).data("index");
+    // Mark as verified (for demo, just show alert)
+    $(this).removeClass("btn-outline-info").addClass("btn-info").text("Verified").prop("disabled", true);
+});
+$(document).on("click", ".fulfill-order-btn", function () {
+    const idx = $(this).data("index");
+    // Move order to fulfilledOrders
+    const order = pendingOrders[idx];
+    fulfilledOrders.push({
+        vendor: order.vendor,
+        items: order.items,
+        amount: "₹" + (Math.floor(Math.random() * 1000) + 500),
+        deliveryDate: "Today",
+        status: "Delivered"
+    });
+    pendingOrders.splice(idx, 1);
+    renderPendingOrders();
+    renderFulfilledOrders();
+    updateStats();
+});
+$(document).on("click", ".complete-group-btn", function () {
+    const idx = $(this).data("index");
+    groupOrders[idx].status = "Completed";
+    renderGroupOrders();
+});
+
+// --- Event Listeners for Order Details and Toasts ---
+$(document).on("click", ".view-order-btn", function () {
+    const idx = $(this).data("index");
+    const type = $(this).data("type") || 'pending';
+    if (type === 'pending') showOrderDetailsModal(pendingOrders[idx], 'pending');
+    else showOrderDetailsModal(fulfilledOrders[idx], 'fulfilled');
+});
+
+// --- Enhance Tooltips ---
+$(function () { $("[data-bs-toggle='tooltip']").tooltip(); });
+
+// --- Toast for Product Actions ---
+$(document).on("click", ".edit-product-btn", function () { showToast('Edit product modal opened.'); });
+$(document).on("click", ".delete-product-btn", function () { showToast('Product deleted.', 'danger'); });
+$("#save-product-modal").click(function () { showToast('Product saved!', 'success'); });
+
+// --- Toast for Profile ---
+$("#save-profile-modal").click(function () { showToast('Profile updated!', 'success'); });
+
+// --- Toast for Notifications ---
+$("#mark-all-read").click(function () { showToast('All notifications marked as read.', 'success'); });
+
+// --- Responsive: Ensure tables are scrollable on mobile ---
+$(function () { $(".table-responsive").css('overflow-x', 'auto'); });
+
+// Always working logout button
+$(document).on('click', '#supplier-logout-btn', function () {
+    localStorage.removeItem('vendorconnect_user');
+    window.location.href = 'login.html';
+}); 

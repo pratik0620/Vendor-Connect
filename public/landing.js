@@ -99,4 +99,4 @@ function updateLanguage() {
         // Update login link
         $(".text-muted").html(`${translations[currentLang].not_logged_in} <a href="login.html" class="text-decoration-none">${translations[currentLang].login_here}</a>`);
     }
-}
+} 

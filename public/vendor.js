@@ -17,7 +17,6 @@ const translations = {
         best_supplier: "Best Supplier",
         best_price: "Best Price",
         nearby_suppliers: "Nearby Suppliers",
-        notifications: "Notifications",
         group_purchases: "Group Purchases",
         join: "Join",
         autopay_setup: "Autopay Setup",
@@ -200,7 +199,6 @@ const translations = {
         best_supplier: "सर्वोत्तम आपूर्तिकर्ता",
         best_price: "सर्वोत्तम मूल्य",
         nearby_suppliers: "आस-पास के आपूर्तिकर्ता",
-        notifications: "सूचनाएँ",
         group_purchases: "समूह खरीदारी",
         join: "शामिल हों",
         autopay_setup: "ऑटोपे सेटअप",
@@ -381,7 +379,6 @@ const translations = {
         best_supplier: "सर्वोत्तम पुरवठादार",
         best_price: "सर्वोत्तम किंमत",
         nearby_suppliers: "जवळचे पुरवठादार",
-        notifications: "सूचना",
         group_purchases: "समूह खरेदी",
         join: "सामील व्हा",
         autopay_setup: "ऑटोपे सेटअप",
@@ -610,11 +607,7 @@ const mockData = {
         { item: "Red Chili Powder", marketPrice: 350, bestSupplier: "Mumbai Masala Supply", bestPrice: 320 },
         { item: "Butter", marketPrice: 580, bestSupplier: "Amul Distributor", bestPrice: 560 }
     ],
-    vendorNotifications: [
-        { type: "price_drop", title: "Price Drop", message: "Potato prices reduced by 10% at Ganesh Trading Co.", time: "1 hour ago" },
-        { type: "new_supplier", title: "New Supplier", message: "New supplier 'Fresh Produce' added near your location.", time: "3 hours ago" },
-        { type: "govt_scheme", title: "Govt. Scheme", message: "New subsidy available for street food vendors. Apply before 30th.", time: "1 day ago" }
-    ],
+
     groupPurchases: [
         {
             id: 1,
@@ -1462,6 +1455,15 @@ function setupCartEventListeners() {
 
     // Update cart count on page load
     updateCartCount();
+
+    // Pay Now button
+    $(document).on('click', '#pay-now-btn', function(e) {
+        if (!cart || cart.length === 0) {
+            showAlert('Your cart is empty. Please add items before paying.', 'warning');
+            e.preventDefault();
+        }
+        // Otherwise, allow default (open payment in new tab)
+    });
 }
 
 // Toggle cart panel
@@ -1759,7 +1761,6 @@ function showVendorDashboard(username) {
     // Load vendor dashboard data
     loadVendorInventory();
     loadPriceComparison();
-    loadVendorNotifications();
     loadGroupPurchases();
     loadSavedCarts();
 
@@ -1854,33 +1855,7 @@ function loadBasicSuppliersList() {
     });
 }
 
-// Load vendor notifications
-function loadVendorNotifications() {
-    const notificationsDiv = $("#vendor-notifications");
-    notificationsDiv.empty();
 
-    mockData.vendorNotifications.forEach(notification => {
-        let icon = "fa-bell";
-        if (notification.type === "price_drop") icon = "fa-tags";
-        if (notification.type === "new_supplier") icon = "fa-store";
-        if (notification.type === "govt_scheme") icon = "fa-landmark";
-
-        notificationsDiv.append(`
-            <div class="notification-item">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <i class="fas ${icon} fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="mb-0">${translations[currentLang][notification.type]}</h6>
-                        <p class="mb-0">${notification.message}</p>
-                        <small class="text-muted">${notification.time}</small>
-                    </div>
-                </div>
-            </div>
-        `);
-    });
-}
 
 // Load group purchases
 function loadGroupPurchases() {
@@ -1980,7 +1955,7 @@ function initPriceComparisonChart() {
             }
         }
     });
-}
+} 
 
 // Setup government schemes event listeners
 function setupSchemesEventListeners() {
@@ -2535,15 +2510,16 @@ function initializeSuppliersMap() {
         ]
     });
     
-    // Get user location
-    getUserLocation();
-    
-    // Load suppliers
-    loadEnhancedSuppliers();
+    // Try to get user location, but always load suppliers
+    getUserLocation(function() {
+        // After location attempt (success or fail), always load suppliers
+        loadEnhancedSuppliers();
+    });
 }
 
-// Get user location
-function getUserLocation() {
+// Get user location (with callback)
+function getUserLocation(callback) {
+    const defaultCenter = { lat: 19.0760, lng: 72.8777 };
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -2551,33 +2527,39 @@ function getUserLocation() {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
-                
-                // Center map on user location
                 suppliersMap.setCenter(userLocation);
                 suppliersMap.setZoom(14);
-                
                 // Add user location marker
                 new google.maps.Marker({
                     position: userLocation,
                     map: suppliersMap,
                     icon: {
                         url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="12" cy="12" r="8" fill="#4285F4" stroke="white" stroke-width="2"/>
-                                <circle cx="12" cy="12" r="3" fill="white"/>
+                            <svg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
+                                <circle cx='12' cy='12' r='8' fill='#4285F4' stroke='white' stroke-width='2'/>
+                                <circle cx='12' cy='12' r='3' fill='white'/>
                             </svg>
                         `),
                         scaledSize: new google.maps.Size(24, 24)
                     },
                     title: "Your Location"
                 });
+                if (callback) callback();
             },
             (error) => {
-                console.log("Geolocation error:", error);
-                // Use default location
                 userLocation = defaultCenter;
+                suppliersMap.setCenter(defaultCenter);
+                suppliersMap.setZoom(12);
+                showAlert("Could not get your location. Showing suppliers near Mumbai.", "warning");
+                if (callback) callback();
             }
         );
+    } else {
+        userLocation = defaultCenter;
+        suppliersMap.setCenter(defaultCenter);
+        suppliersMap.setZoom(12);
+        showAlert("Geolocation not supported. Showing suppliers near Mumbai.", "warning");
+        if (callback) callback();
     }
 }
 
@@ -2697,48 +2679,37 @@ function createInfoWindowContent(supplier) {
 function loadEnhancedSuppliersList() {
     const suppliersList = $("#suppliers-list");
     suppliersList.empty();
-    
-    enhancedSuppliersData.forEach(supplier => {
-        const supplierCard = `
-            <div class="supplier-card" data-supplier-id="${supplier.id}" onclick="selectSupplier(${supplier.id})">
-                <div class="supplier-header">
-                    <div>
-                        <div class="supplier-name">${supplier.name}</div>
-                        <div class="supplier-category">${translations[currentLang][supplier.category] || supplier.category}</div>
-                    </div>
-                    <div class="supplier-rating">
-                        <div class="stars">${getStarsHTML(supplier.rating)}</div>
-                        <div class="rating-text">${supplier.rating}</div>
-                    </div>
-                </div>
-                <div class="supplier-details">
-                    <div class="supplier-detail">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>${supplier.distance} ${translations[currentLang].km_away}</span>
-                    </div>
-                    <div class="supplier-detail">
-                        <i class="fas fa-phone"></i>
-                        <span>${supplier.phone}</span>
-                    </div>
-                    <div class="supplier-detail">
-                        <i class="fas fa-clock"></i>
-                        <span>${supplier.deliveryTime}</span>
-                    </div>
-                </div>
-                <div class="supplier-actions">
-                    <button class="supplier-btn supplier-btn-primary" onclick="contactSupplier(${supplier.id}); event.stopPropagation();">
-                        <i class="fas fa-phone me-1"></i>
-                        ${translations[currentLang].contact_supplier}
-                    </button>
-                    <button class="supplier-btn supplier-btn-secondary" onclick="viewSupplierProducts(${supplier.id}); event.stopPropagation();">
-                        <i class="fas fa-eye me-1"></i>
-                        ${translations[currentLang].view_products}
-                    </button>
-                </div>
-            </div>
-        `;
-        suppliersList.append(supplierCard);
-    });
+    // Render as a table
+    let tableHTML = `<div class="table-responsive"><table class="table table-hover align-middle orange-shadow">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Rating</th>
+                <th>Distance</th>
+                <th>Phone</th>
+                <th>Delivery Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${enhancedSuppliersData.map(supplier => `
+                <tr>
+                    <td>${supplier.name}</td>
+                    <td>${translations[currentLang][supplier.category] || supplier.category}</td>
+                    <td><span class="stars">${getStarsHTML(supplier.rating)}</span> <span class="rating-text">${supplier.rating}</span></td>
+                    <td>${supplier.distance} ${translations[currentLang].km_away}</td>
+                    <td>${supplier.phone}</td>
+                    <td>${supplier.deliveryTime}</td>
+                    <td>
+                        <button class="btn btn-sm btn-orange me-1" onclick="contactSupplier(${supplier.id})"><i class="fas fa-phone"></i></button>
+                        <button class="btn btn-sm btn-outline-orange" onclick="viewSupplierProducts(${supplier.id})"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table></div>`;
+    suppliersList.append(tableHTML);
 }
 
 // Select supplier
@@ -2877,4 +2848,197 @@ function viewSupplierProducts(supplierId) {
         showAlert(`Products from ${supplier.name}: ${productsList}`, "info");
         // In a real app, this would show a detailed product catalog
     }
-} 
+}
+
+let suppliersSortKey = 'name';
+let suppliersSortAsc = true;
+let selectedSupplierId = null;
+
+function renderSuppliersMapAndTable() {
+    const suppliersList = $("#suppliers-list");
+    suppliersList.empty();
+    // Map container
+    let mapHTML = `<div class="mb-3"><div id="suppliers-map-table" style="width:100%;height:250px;border-radius:12px;"></div></div>`;
+    // Table
+    let tableHTML = `<div class="table-responsive"><table class="table table-hover align-middle orange-shadow">
+        <thead>
+            <tr>
+                <th class="sortable" data-key="name">Name <span class="sort-icon"></span></th>
+                <th class="sortable" data-key="category">Category <span class="sort-icon"></span></th>
+                <th class="sortable" data-key="rating">Rating <span class="sort-icon"></span></th>
+                <th class="sortable" data-key="distance">Distance <span class="sort-icon"></span></th>
+                <th class="sortable" data-key="deliveryTime">Delivery Time <span class="sort-icon"></span></th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${getSortedSuppliers().map(supplier => `
+                <tr class="supplier-row${selectedSupplierId === supplier.id ? ' table-active' : ''}" data-supplier-id="${supplier.id}">
+                    <td>${supplier.name}</td>
+                    <td>${translations[currentLang][supplier.category] || supplier.category}</td>
+                    <td><span class="stars">${getStarsHTML(supplier.rating)}</span> <span class="rating-text">${supplier.rating}</span></td>
+                    <td>${supplier.distance} ${translations[currentLang].km_away}</td>
+                    <td>${supplier.deliveryTime}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-orange me-1 view-products-btn" data-id="${supplier.id}"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-orange add-supplier-cart-btn" data-id="${supplier.id}"><i class="fas fa-cart-plus"></i></button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table></div>`;
+    suppliersList.append(mapHTML + tableHTML);
+    renderSuppliersMap();
+    updateSuppliersSortIcons();
+}
+
+function getSortedSuppliers() {
+    let arr = [...enhancedSuppliersData];
+    arr.sort((a, b) => {
+        let v1 = a[suppliersSortKey], v2 = b[suppliersSortKey];
+        if (suppliersSortKey === 'rating' || suppliersSortKey === 'distance') {
+            v1 = parseFloat(v1); v2 = parseFloat(v2);
+        } else if (suppliersSortKey === 'name' || suppliersSortKey === 'category' || suppliersSortKey === 'deliveryTime') {
+            v1 = v1.toString().toLowerCase(); v2 = v2.toString().toLowerCase();
+        }
+        if (v1 < v2) return suppliersSortAsc ? -1 : 1;
+        if (v1 > v2) return suppliersSortAsc ? 1 : -1;
+        return 0;
+    });
+    return arr;
+}
+
+function updateSuppliersSortIcons() {
+    $("#suppliers-list th.sortable .sort-icon").html("");
+    const th = $(`#suppliers-list th[data-key='${suppliersSortKey}'] .sort-icon`);
+    th.html(suppliersSortAsc ? '<i class="fas fa-sort-up"></i>' : '<i class="fas fa-sort-down"></i>');
+}
+
+function renderSuppliersMap() {
+    const mapDiv = document.getElementById("suppliers-map-table");
+    if (!mapDiv) return;
+    mapDiv.innerHTML = "";
+    const map = new google.maps.Map(mapDiv, {
+        center: { lat: 19.0760, lng: 72.8777 },
+        zoom: 12,
+        styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }]
+    });
+    // Fit bounds to all suppliers
+    const bounds = new google.maps.LatLngBounds();
+    enhancedSuppliersData.forEach(supplier => {
+        const marker = new google.maps.Marker({
+            position: supplier.location,
+            map,
+            title: supplier.name,
+            icon: selectedSupplierId === supplier.id ? {
+                url: "https://maps.google.com/mapfiles/ms/icons/orange-dot.png"
+            } : undefined
+        });
+        bounds.extend(supplier.location);
+        marker.addListener("click", () => {
+            selectedSupplierId = supplier.id;
+            renderSuppliersMapAndTable();
+        });
+    });
+    if (!bounds.isEmpty()) map.fitBounds(bounds);
+}
+
+// --- Event Listeners for Table ---
+$(document).on('click', '#suppliers-list th.sortable', function () {
+    const key = $(this).data('key');
+    if (suppliersSortKey === key) suppliersSortAsc = !suppliersSortAsc;
+    else { suppliersSortKey = key; suppliersSortAsc = true; }
+    renderSuppliersMapAndTable();
+});
+$(document).on('click', '.supplier-row', function () {
+    selectedSupplierId = parseInt($(this).data('supplier-id'));
+    renderSuppliersMapAndTable();
+});
+$(document).on('click', '.view-products-btn', function (e) {
+    e.stopPropagation();
+    const id = parseInt($(this).data('id'));
+    viewSupplierProducts(id);
+});
+$(document).on('click', '.add-supplier-cart-btn', function (e) {
+    e.stopPropagation();
+    const id = parseInt($(this).data('id'));
+    const supplier = enhancedSuppliersData.find(s => s.id === id);
+    if (supplier && supplier.products && supplier.products.length > 0) {
+        const product = supplier.products[0];
+        addToCart({
+            id: 'sup_' + product.name.toLowerCase().replace(/\s+/g, '_'),
+            name: product.name || product,
+            price: product.price || Math.floor(Math.random() * 50) + 30,
+            supplier: supplier.name
+        });
+        showAlert(`${product.name} from ${supplier.name} added to cart!`, 'success');
+    }
+});
+
+// Add Supplier Modal logic
+$(document).on('click', '#add-supplier-btn', function () {
+    $('#addSupplierModal').modal('show');
+    setTimeout(() => {
+        // Initialize map for picking location
+        const mapDiv = document.getElementById('add-supplier-map');
+        mapDiv.innerHTML = '';
+        const map = new google.maps.Map(mapDiv, {
+            center: { lat: 19.0760, lng: 72.8777 },
+            zoom: 12
+        });
+        let marker = null;
+        map.addListener('click', function (e) {
+            if (marker) marker.setMap(null);
+            marker = new google.maps.Marker({ position: e.latLng, map });
+            $('#supplier-lat').val(e.latLng.lat());
+            $('#supplier-lng').val(e.latLng.lng());
+        });
+    }, 300);
+});
+
+$(document).on('click', '#save-supplier-btn', function () {
+    const name = $('#supplier-name').val();
+    const category = $('#supplier-category').val();
+    const rating = parseFloat($('#supplier-rating').val());
+    const distance = parseFloat($('#supplier-distance').val());
+    const deliveryTime = $('#supplier-delivery').val();
+    const lat = parseFloat($('#supplier-lat').val());
+    const lng = parseFloat($('#supplier-lng').val());
+    if (!name || !category || isNaN(rating) || isNaN(distance) || !deliveryTime || isNaN(lat) || isNaN(lng)) {
+        showAlert('Please fill all fields and select a location on the map.', 'danger');
+        return;
+    }
+    const newSupplier = {
+        id: Date.now(),
+        name,
+        category,
+        rating,
+        distance,
+        location: { lat, lng },
+        phone: '',
+        deliveryTime,
+        products: [
+            { name: 'Sample Product', price: Math.floor(Math.random() * 50) + 30 }
+        ]
+    };
+    enhancedSuppliersData.push(newSupplier);
+    $('#addSupplierModal').modal('hide');
+    showAlert('Supplier added!', 'success');
+    renderSuppliersMapAndTable();
+});
+
+  // Wait for the page to load
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize the map and set its view
+    var map = L.map('map').setView([28.6139, 77.2090], 13); // [lat, lon], zoom
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Add a marker
+    L.marker([28.6139, 77.2090]).addTo(map)
+      .bindPopup('New Delhi')
+      .openPopup();
+  });
