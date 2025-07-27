@@ -27,6 +27,8 @@ CREATE TABLE VendorInfo (
     city VARCHAR(50),
     state_name VARCHAR(50),
     contact VARCHAR(15),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
     FOREIGN KEY (vendor_id) REFERENCES Vendor(id)
 );
 
@@ -39,6 +41,8 @@ CREATE TABLE SupplierInfo (
     city VARCHAR(50),
     state_name VARCHAR(50),
     contact VARCHAR(15),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
     FOREIGN KEY (supplier_id) REFERENCES Supplier(id)
 );
 
